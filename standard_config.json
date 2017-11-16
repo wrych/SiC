@@ -1,0 +1,129 @@
+{
+    "Epics": 
+    {
+        "type": "resource",
+        "config": {
+            "current_range":{
+			        "type": "value",
+			        "value": 1,
+                    "dtype": "int"
+        	    },
+        	"xbpm_bias_state":{
+			        "type": "value",
+			        "value": 1
+        	    },
+            "xbpm_bias_voltage": {
+                    "type": "value",
+                    "value": 0.0,
+                    "dtype": "float"
+                },
+        	"diode_bias_state":{
+			        "type": "value",
+			        "value": 1
+        	    },
+            "diode_bias_voltage": {
+                    "type": "value",
+                    "value": 9.0,
+                    "dtype": "float"
+                },
+        	"diode_current":{
+			        "type": "value",
+			        "access_mode": "r"
+        	    },
+            "diode_range": {
+                    "type": "value",
+                    "value": 2,
+                    "dtype": "int"
+                },
+            "num_channels":{
+                    "type": "value",
+                    "value": 2,
+                    "dtype": "int"
+                },
+        	"resolution":{
+                    "type": "value",
+                    "value": 1,
+                    "dtype": "int"
+                },
+        	"acquire_mode":{
+                    "type": "value",
+                    "value": 1,
+                    "dtype": "int"
+                },
+        	"num_acquire":{
+                    "type": "value",
+                    "value": 1,
+                    "dtype": "int"
+                },
+        	"sample_time": {
+                    "type": "value",
+                    "dtype": "float",
+                    "access_mode": "r"
+                },
+        	"currents": {
+                    "type": "value",
+                    "access_mode": "r"
+                },
+        	"averaging_time":{
+                    "type": "value",
+                    "value": 0.5,
+                    "dtype": "float"
+             	},
+        	"shutter_open":{
+                    "type": "value",
+                    "value": 0,
+                    "dtype": "float",
+                    "access_mode": "r"
+             	},
+        	"storage_ring_current":{
+                    "type": "value",
+                    "access_mode": "r"
+             	},
+        	"photon_energy":{
+                    "type": "value",
+                    "value": 12400,
+                    "dtype": "float",
+                    "access_mode": "r"
+             	},
+        	"photon_energy_rbv":{
+                    "type": "value",
+                    "access_mode": "r"
+             	},
+        	"frontend_slits_width":{
+                    "type": "value",
+                    "value": 3.0,
+                    "dtype": "float"
+             	},
+        	"jj_slits_v_size":{
+                    "type": "value",
+                    "value": 0.1,
+                    "dtype": "float"
+             	},
+        	"jj_slits_h_size":{
+                    "type": "value",
+                    "value": 0.1,
+                    "dtype": "float"
+             	},
+        	"xbpm_z_translation":{
+                    "type": "value",
+                    "value": -200.0,
+                    "dtype": "float"
+             	},
+        	"xbpm_y_translation":{
+                    "type": "value",
+                    "value": -6.0,
+                    "dtype": "float"
+             	},
+        	"xbpm_x_translation":{
+                    "type": "value",
+                    "value": 0.0,
+                    "dtype": "float"
+             	},
+        	"filter_wheel":{
+                    "type": "value",
+                    "value": 0.0,
+                    "dtype": "float"
+             	}
+      	}
+}
+}
