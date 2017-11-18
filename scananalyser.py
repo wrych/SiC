@@ -180,6 +180,19 @@ class ScanAnalyser():
     def get_indexes_by_key(self, key):
         return(self.get_sub_item(key, self._scan_parameter['scan']))
 
+    def get_reshape_order(self, x,y,z):
+        print(x.shape[0],y.shape[0],z.shape[0])
+        x_len = x.shape[0]-1
+        y_len = y.shape[0]-1
+        search_index = x_len if (x_len < y_len) else y_len
+        x_val = self.get_sub_item_by_index(self._x_key, search_index)
+        y_val = self.get_sub_item_by_index(self._y_key, search_index)
+        if (abs(x[search_index]-x_val)<abs(y[search_index]-y_val)):
+            return('C')
+        else:
+            return('F')
+        
+
     def matshow_axis(self, ax, x, y, z, 
                      label=None, 
                      xlabel=None, 
@@ -190,7 +203,7 @@ class ScanAnalyser():
         ax.set_ylabel(ylabel)
         if (z.shape[0] != x.shape[0]*y.shape[0]):
             numpy.pad(z, (x.shape[0]*y.shape[0]-z.shape[0]), 'constant', constant_values=0)
-        z = z.reshape(x.shape[0], y.shape[0])
+        z = z.reshape(x.shape[0], y.shape[0], order=self.get_reshape_order(x,y,z))
         try:        
             z = numpy.flip(z, axis=1)
         except:
@@ -201,15 +214,17 @@ class ScanAnalyser():
                                             vmax=vmax)
         ax.imshow(z,
                   aspect='equal',
-                  extent = (numpy.min(x), numpy.max(x), numpy.min(y), numpy.max(y)),
+                  extent = (numpy.max(x), numpy.min(x), numpy.max(y), numpy.min(y)),
                   norm = norm,
-                  origin='lower')
+                  origin='upper')
 
     def get_center_2d(self):
         z = self.get_array(self._z_key)
         std_dev = numpy.std(z, axis=1)
         min_index = numpy.argmin(std_dev)
         self.log(logging.DEBUG, 'Lowest std dev at measurement point {0}'.format(min_index))
+        x = self.get_sub_item_by_index(self._x_key, min_index)
+        y = self.get_sub_item_by_index(self._y_key, min_index)
         return(x, y)
         
     def plot_to_do():

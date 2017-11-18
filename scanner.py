@@ -39,12 +39,12 @@ class UserScan(collectorobject.CollectorObject):
         finally:
             self._tear_down()
 
-    def set_kw_args(self, kw_args, key, default):
+    def set_kw_args(self, kw_args, key):
         try:
             setattr(self, '_kw_{0}'.format(key), kw_args[key])
             del(kw_args[key])
         except:
-            setattr(self, '_kw_{0}'.format(key), default)
+            setattr(self, '_kw_{0}'.format(key), None)
         return(kw_args)
 
     def get_standard_config(self):

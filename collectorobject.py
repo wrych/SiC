@@ -354,11 +354,12 @@ class Value(CollectorObject):
         setter(value)
         retries = 1
         while(abs(getter()-value)>acceptable_delta):
-            time.sleep(.4)
+            time.sleep(.2)
             if ((retries%20) == 0 and getter() == init_value):
                 self.log(logging.WARN, 'No difference in value detected, trying to re set value.')
                 setter(value)
-            if(retries > 100):
+            if(retries > 200):
+                self.log(logging.WARN, 'No difference in value detected, failed to re set value. Raising E...')
                 raise(Exception('Could not set value'))
             retries += 1
         time.sleep(0.4)

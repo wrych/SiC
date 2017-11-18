@@ -106,31 +106,31 @@
                     "type": "value",
                     "value": 0.01,
                     "dtype": "float",
-                    "synced": 0.0025
+                    "synced": 0.0001
              	},
         	"jj_slits_h_size":{
                     "type": "value",
                     "value": 0.01,
                     "dtype": "float",
-                    "synced": 0.0025
+                    "synced": 0.0001
              	},
         	"xbpm_z_translation":{
                     "type": "value",
                     "value": 0.0,
                     "dtype": "float",
-                    "synced": 0.0025
+                    "synced": 0.0001
              	},
         	"xbpm_y_translation":{
                     "type": "value",
                     "value": 0.0,
                     "dtype": "float",
-                    "synced": 0.0025
+                    "synced": 0.0001
              	},
         	"xbpm_x_translation":{
                     "type": "value",
                     "value": 0.0,
                     "dtype": "float",
-                    "synced": 0.0025
+                    "synced": 0.0001
              	},
         	"filter_wheel":{
                     "type": "value",
