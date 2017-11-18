@@ -12,11 +12,14 @@ class Epics(collectorobject.Resource):
         'photon_energy_d': 'X05DA-OP-MO:E_SET',
         'photon_energy_rbv': 'X05DA-OP-MO:E_RBV',
         'frontend_slits_width': 'X05DA-OP-FEAU:HWIDTH_RBV',
-        'jj_slits_v_size': 'X05DA-ED-JJ:SVsize',
-        'jj_slits_h_size': 'X05DA-ED-JJ:SHsize',
-        'xbpm_z_translation_d': 'X05DA-ED-PP:M23.DESC',
-        'xbpm_y_translation_d': 'X05DA-ED-PPM24.DESC',
-        'xbpm_x_translation_d': 'X05DA-ED-PPM25.DESC',
+        'jj_slits_v_size': 'X05DA-ES-JJ:SVsize',
+        'jj_slits_h_size': 'X05DA-ES-JJ:SHsize',
+        'xbpm_z_translation_d': 'X05DA-ES-PP:M23.VAL',
+        'xbpm_y_translation_d': 'X05DA-ES-PP:M24.VAL',
+        'xbpm_x_translation_d': 'X05DA-ES-PP:M25.VAL',
+        'xbpm_z_translation_rbv': 'X05DA-ES-PP:M23.RBV',
+        'xbpm_y_translation_rbv': 'X05DA-ES-PP:M24.RBV',
+        'xbpm_x_translation_rbv': 'X05DA-ES-PP:M25.RBV',
         'xbpm_bias_state': 'X05DA-KEI10:VOLTOUT',
         'xbpm_bias_voltage': 'X05DA-KEI10:SETVOLTAGE',
         'diode_bias_state': 'X05DA-KEI12:VOLTOUT',
@@ -57,16 +60,21 @@ class Epics(collectorobject.Resource):
         self.build_getter_setter(self.ah501d, self.AH501D_KEYS, True)
         self.build_getter_setter(self.ah501d, self.AH501D_NO_RBV_KEYS, False)
         self.build_getter_setter('', self.KEYS, False)
-        self.get_xbpm_x_translation = self.get_xbpm_x_translation_d
-        self.get_xbpm_y_translation = self.get_xbpm_y_translation_d
-        self.get_xbpm_z_translation = self.get_xbpm_z_translation_d
+        self.get_xbpm_x_translation = self.get_xbpm_x_translation_rbv
+        self.get_xbpm_y_translation = self.get_xbpm_y_translation_rbv
+        self.get_xbpm_z_translation = self.get_xbpm_z_translation_rbv
+        self.set_xbpm_x_translation = self.set_xbpm_x_translation_d
+        self.set_xbpm_y_translation = self.set_xbpm_y_translation_d
+        self.set_xbpm_z_translation = self.set_xbpm_z_translation_d
         self.get_photon_energy = self.get_photon_energy_rbv
+        self.set_photon_energy = self.set_photon_energy_d
         super(Epics, self).initialize(config)
+
+    def compute_offset(self):
         self.log(logging.INFO, 'Compute Offsets')
         self.acquire()
         for i in range(4):
             getattr(self, 'set_compute_current_offset_{0}'.format(i))
-            time.sleep(1)
 
     def build_getter_setter(self, device, config, rbv):
         for key, value in config.items():
@@ -93,28 +101,12 @@ class Epics(collectorobject.Resource):
         value = getattr(self, 'get_mean_value_{0}'.format(index))()
         self.log(logging.DEBUG, 'Channel {0}, value: {1}'.format(index, value))
         current_range = [2.5e-3, 2.5e-6, 2.5e-9][self.get_current_range()]
-        resolution = [24, 16][self.get_resolution()]
+        self.log(logging.DEBUG, 'Channel {0}, current_range: {1}'.format(index, current_range))
+        resolution = [16, 24][self.get_resolution()]
+        self.log(logging.DEBUG, 'Channel {0}, resolution: {1}'.format(index, resolution))
         current = float(2*current_range)/(2**resolution-1)*value
         self.log(logging.INFO, 'Channel {0}, value: {1}'.format(index, current))
         return(current)
-
-    def sync(self, setter, getter, value, acceptable_delta):
-        setter(value)
-        while(abs(getter()-value)>acceptable_delta):
-            time.sleep(.2)
-        return(True)
-        
-    def set_photon_energy(self, value):
-        self.sync(self.set_photon_energy_d, self.get_photon_energy_rbv, value, 50.0)
-
-    def set_xbmp_x_translation(self, value):
-        self.sync(self.set_xbpm_x_translation_d, self.get_xbpm_x_translation_d, value, 0.03)
-
-    def set_xbmp_y_translation(self, value):
-        self.sync(self.set_xbpm_y_translation_d, self.get_xbpm_y_translation_d, value, 0.03)
-
-    def set_xbmp_z_translation(self, value):
-        self.sync(self.set_xbpm_z_translation_d, self.get_xbpm_z_translation_d, value, 0.03)
 
     def acquire(self):
         acquire_time = self.get_averaging_time()*2

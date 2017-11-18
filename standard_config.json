@@ -10,16 +10,19 @@
         	    },
         	"xbpm_bias_state":{
 			        "type": "value",
-			        "value": 1
+			        "value": 1,
+                    "dtype": "int"
         	    },
             "xbpm_bias_voltage": {
                     "type": "value",
                     "value": 0.0,
-                    "dtype": "float"
+                    "dtype": "float",
+                    "synced": 0.0
                 },
         	"diode_bias_state":{
 			        "type": "value",
-			        "value": 1
+			        "value": 1,
+                    "dtype": "int"
         	    },
             "diode_bias_voltage": {
                     "type": "value",
@@ -45,6 +48,11 @@
                     "value": 1,
                     "dtype": "int"
                 },
+        	"acquire":{
+                    "type": "value",
+                    "value": 0,
+                    "dtype": "int"
+                },
         	"acquire_mode":{
                     "type": "value",
                     "value": 1,
@@ -66,14 +74,13 @@
                 },
         	"averaging_time":{
                     "type": "value",
-                    "value": 0.5,
+                    "value": 0.25,
                     "dtype": "float"
              	},
         	"shutter_open":{
                     "type": "value",
                     "value": 0,
-                    "dtype": "float",
-                    "access_mode": "r"
+                    "dtype": "float"
              	},
         	"storage_ring_current":{
                     "type": "value",
@@ -83,6 +90,7 @@
                     "type": "value",
                     "value": 12400,
                     "dtype": "float",
+                    "synced": 50.0,
                     "access_mode": "r"
              	},
         	"photon_energy_rbv":{
@@ -96,33 +104,38 @@
              	},
         	"jj_slits_v_size":{
                     "type": "value",
-                    "value": 0.1,
-                    "dtype": "float"
+                    "value": 0.01,
+                    "dtype": "float",
+                    "synced": 0.0025
              	},
         	"jj_slits_h_size":{
                     "type": "value",
-                    "value": 0.1,
-                    "dtype": "float"
+                    "value": 0.01,
+                    "dtype": "float",
+                    "synced": 0.0025
              	},
         	"xbpm_z_translation":{
                     "type": "value",
-                    "value": -200.0,
-                    "dtype": "float"
+                    "value": 0.0,
+                    "dtype": "float",
+                    "synced": 0.0025
              	},
         	"xbpm_y_translation":{
                     "type": "value",
-                    "value": -6.0,
-                    "dtype": "float"
+                    "value": 0.0,
+                    "dtype": "float",
+                    "synced": 0.0025
              	},
         	"xbpm_x_translation":{
                     "type": "value",
                     "value": 0.0,
-                    "dtype": "float"
+                    "dtype": "float",
+                    "synced": 0.0025
              	},
         	"filter_wheel":{
                     "type": "value",
-                    "value": 0.0,
-                    "dtype": "float"
+                    "value": 0,
+                    "dtype": "int"
              	}
       	}
 }

@@ -6,12 +6,15 @@ import logging
 import os
 import datetime
 import json
+import time
 
 
 def get_preconfigured_logger():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     return(logging.getLogger('collector'))
 
+class CollectorException(Exception):
+    pass
 
 class CollectorObject(object):
 
@@ -105,13 +108,14 @@ class Resource(CollectorObject):
             obj_type = params['type']
             if (obj_type == 'value'):
                 for value in params['values']:
+                    self.log(logging.INFO, 'Setting {0} to {1}'.format(key, value))
                     self.update_value_child(key, {'value': value})
-                    self.log(logging.DEBUG, 'Scan Step completed')
                     self.scan(scan, config, done_keys)
             elif (obj_type == 'resource'):
                 self._children[key].scan(scan, params['config'], done_keys)
         else:
             scan.take_data_point()
+            self.log(logging.INFO, 'Scan Step completed')
 
     def get_value_dict(self):
         data_dict = {}
@@ -125,18 +129,6 @@ class Resource(CollectorObject):
             data_dict = self.append_data_dict(data_dict, key, params)
         return(data_dict)
 
-    def check_value_exceeds_limts(value, allowed_range):
-        if (type(value) == list):
-            for i, v in enumerate(value):
-                self.check_value_exceeds_limits(v, [allowed_range[0][i], allowed_range[1][i]])
-        else:
-            if (allowed_range[0] is not None):
-                if (value < allowed_range[0]):
-                    raise(RuntimeException('Value lower than definded minmum'))
-            if (allowed_range[1] is not None):
-                if (value > allowed_range[1]):
-                    raise(RuntimeException('Value higher than definded maximum'))
-
     def append_data_dict(self, data_dict, key, params):
         if not(key in data_dict):
             data_dict[key] = {}
@@ -144,11 +136,6 @@ class Resource(CollectorObject):
         data_dict[key]['type'] = obj_type
         if (obj_type == 'value'):
             value = self.get_child(key).get_value_dict()
-            try:
-                allowed_range = params['allowed_range']
-                self.check_value_exceeds_limits(value, allowed_range)
-            except:
-                self.log(logging.DEBUG, 'No limits for value {0}'.format(key))
             data_dict[key]['value'] = value
         elif (obj_type == 'resource'):
             if ('config' not in data_dict[key]):
@@ -171,21 +158,59 @@ class Scan(CollectorObject):
         self._name_pattern = name_pattern
         self._root_path = path
 
+    def get_scan_path(self):
+        return(self._scan_path)
+
     def scan(self):
         self._data_point_nr = 0
-        self._scan_path = os.path.join(self._root_path, datetime.datetime.strftime(datetime.datetime.now(), '%Y%m%d_%H%M%S'))
-        os.mkdir(self._scan_path)
+        self._scan_path = self._root_path
         self.write_initial_config()
         self.log(logging.INFO, 'Running Scan')
         self._resource.scan(self, self._config['scan'])
         self.log(logging.INFO, 'Scan Finished')
         return(self.get_data_points())
 
+    def get_data_points(self):
+        return(self._data_points)
+
     def take_data_point(self):
+        self.log(logging.DEBUG, 'Getting all data for scan point.')
         data_dict = self.build_data_dict()
         self._data_points.append(data_dict)
         self.write_data_file(data_dict)
         self._data_point_nr += 1
+        self.check_values(data_dict, self._config['meas'])
+
+    def check_values(self, values, config):
+        for key in config:
+            if(config[key]['type'] == 'value'):
+                try:
+                    self.check_value_exceeds_limits(values[key]['value']['value'], config[key]['allowed_range'])
+                except KeyError as e:
+                    self.log(logging.DEBUG, 'No limit for value: {0}'.format(key))
+            else:
+                self.check_values(values[key]['config'], config[key]['config'])
+
+    def check_value_exceeds_limits(self, value, allowed_range, max_values_out_of_range=1):
+        self.log(logging.DEBUG, 'Checking values {0} against range {1}'.format(value, allowed_range))
+        if (type(value) == list):
+            fails = 0
+            for i, v in enumerate(value):
+                try:
+                    self.check_value_exceeds_limits(v, [allowed_range[0][i], allowed_range[1][i]])
+                except CollectorException as e:
+                    self.log(logging.WARN, e)
+                    fails += 1
+            if (fails > max_values_out_of_range):
+                raise(CollectorException('More values out of range than defined'))
+        else:
+            self.log(logging.DEBUG, 'Value: {0} Limits: {1}'.format(value, allowed_range))
+            if (allowed_range[0] is not None):
+                if (value < allowed_range[0]):
+                    raise(CollectorException('Value lower than definded minmum'))
+            if (allowed_range[1] is not None):
+                if (value > allowed_range[1]):
+                    raise(CollectorException('Value higher than definded maximum'))
 
     def write_initial_config(self):   
         file_name = '{0}.json'.format(self._name_pattern.format('config'))     
@@ -234,6 +259,7 @@ class Value(CollectorObject):
                  allowed_values=None,
                  setter=None,
                  getter=None,
+                 synced=None,
                  logger=sys.stdout):
         super(self.__class__, self).__init__(logger)
         self.set_dtype(dtype)
@@ -243,6 +269,13 @@ class Value(CollectorObject):
         self.set_allowed_values(allowed_values)
         self.set_setter(setter)
         self.set_getter(getter)
+        self.set_synced(synced)
+
+    def set_synced(self, value):
+        self._synced = value
+
+    def get_synced(self):
+        return(self._synced)
 
     def set_dtype(self, dtype):
         if (dtype not in self._KNOWN_DTYPES and dtype is not None):
@@ -316,6 +349,21 @@ class Value(CollectorObject):
     def get_getter(self):
         return(self._getter)
 
+    def sync(self, setter, getter, value, acceptable_delta, retried=False):
+        init_value = getter()
+        setter(value)
+        retries = 1
+        while(abs(getter()-value)>acceptable_delta):
+            time.sleep(.4)
+            if ((retries%20) == 0 and getter() == init_value):
+                self.log(logging.WARN, 'No difference in value detected, trying to re set value.')
+                setter(value)
+            if(retries > 100):
+                raise(Exception('Could not set value'))
+            retries += 1
+        time.sleep(0.4)
+        return(True)
+
     def set_value(self, value):
         value = self.cast_dtype(value)
         self.check_in_allowed_range(value)
@@ -324,7 +372,11 @@ class Value(CollectorObject):
         self._set_point = value
         setter = self.get_setter()
         if (setter is not None):
-            setter(value)
+            if(self._synced is not None):
+                self.sync(setter, self.get_getter(), value, self._synced)
+            else:
+                setter(value)
+                
 
     def get_set_point(self):
         try:
@@ -335,9 +387,10 @@ class Value(CollectorObject):
     def get_value(self):
         getter = self.get_getter()
         if (getter is not None):
-            return(getter())
+            value = getter()
         else:
-            return(self.get_set_point())
+            value = self.get_set_point()
+        return(value)
 
     def get_value_dict(self):
         attr_dict = {}

@@ -75,26 +75,29 @@
         	"frontend_slits_width":{
                     "type": "value",
                     "value": 3.0,
-                    "dtype": "float"
+                    "dtype": "float",
+                    "access_mode": "r"
              	},
         	"jj_slits_v_size":{
                     "type": "value",
                     "value": 0.1,
-                    "dtype": "float"
+                    "dtype": "float",
+                    "access_mode": "r"
              	},
         	"jj_slits_h_size":{
                     "type": "value",
                     "value": 0.1,
-                    "dtype": "float"
+                    "dtype": "float",
+                    "access_mode": "r"
              	},
         	"xbpm_z_translation":{
                     "type": "value",
-                    "value": -200.0,
+                    "value": 0.0,
                     "dtype": "float"
              	},
         	"xbpm_y_translation":{
                     "type": "value",
-                    "value": -6.0,
+                    "value": 0.0,
                     "dtype": "float"
              	},
         	"xbpm_x_translation":{
@@ -105,7 +108,8 @@
         	"filter_wheel":{
                     "type": "value",
                     "value": 0.0,
-                    "dtype": "float"
+                    "dtype": "float",
+                    "access_mode": "r"
              	}
       	}
 }
