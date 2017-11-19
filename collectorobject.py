@@ -237,9 +237,6 @@ class Scan(CollectorObject):
         config_dict = self._resource.update_data_dict(self._config['meas'], config_dict)
         return(config_dict)
 
-    def get_data_points(self):
-        return(self._data_points)
-
 
 class Value(CollectorObject):
     _ALLOWED_ACCESS_MODES = ['r', 'w', 'rw']
