@@ -226,15 +226,30 @@ class ScanAnalyser():
         x = self.get_sub_item_by_index(self._x_key, min_index)
         y = self.get_sub_item_by_index(self._y_key, min_index)
         return(x, y)
-        
-    def plot_to_do():
+
+    def plot_to_do(self):#ToDo
         x = self.get_sub_item_by_index(self._x_key, min_index)
         y = self.get_sub_item_by_index(self._y_key, min_index)
         self.log(logging.INFO, 'Getting X data...')
         x = self.get_indexes_by_key(self._x_key)
         self.log(logging.INFO, 'Getting Y data...')
         y = self.get_indexes_by_key(self._y_key)
-        
+
+    def save_data(self):
+        self.log(logging.INFO, 'Getting X data...')
+        data = {}
+        data['x'] = self.get_array(self._x_key)
+        self.log(logging.INFO, 'Getting Y data...')
+        data['y'] = self.get_array(self._y_key)
+        try:
+            self.log(logging.INFO, 'Getting Z data...')
+            data['z'] = self.get_array(self._z_key)
+            data_width = 3
+        except:
+            data_width = 2
+        with open(os.path.join(self._scan_path, 'data.txt'), 'w') as f:
+            for index in range(data['x'].shape[0]):
+                f.write('{0}\n'.format('\t'.join([str(data[key][index]) for key in data]))
 
     def plot_3d(self, fig):
         self.log(logging.INFO, 'Getting X data...')
@@ -266,10 +281,11 @@ class ScanAnalyser():
         self._x_key = self.get_paths_by_key(kw_args['x_key'])
         self._y_key = self.get_paths_by_key(kw_args['y_key'])
         if (len(self._param_paths) == 1):
-            self.plot_2d(fig)
+            pass#self.plot_2d(fig)
         else:
             self._z_key = self.get_paths_by_key(kw_args['z_key'])
-            self.plot_3d(fig)
+            pass#self.plot_3d(fig)
+        self.save_data()
         self.publish_plot(fig)
         if(display_plot):
             self.display_plot(fig)

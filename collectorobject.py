@@ -164,7 +164,8 @@ class Scan(CollectorObject):
     def scan(self):
         self._data_point_nr = 0
         self._scan_path = self._root_path
-        self.write_initial_config()
+        self.write_initial_state()
+        self.write_scan_config()
         self.log(logging.INFO, 'Running Scan')
         self._resource.scan(self, self._config['scan'])
         self.log(logging.INFO, 'Scan Finished')
@@ -212,9 +213,14 @@ class Scan(CollectorObject):
                 if (value > allowed_range[1]):
                     raise(CollectorException('Value higher than definded maximum'))
 
-    def write_initial_config(self):   
-        file_name = '{0}.json'.format(self._name_pattern.format('config'))     
+    def write_initial_state(self):   
+        file_name = '{0}.json'.format(self._name_pattern.format('init_state'))
         config_dict = self._resource.get_value_dict()
+        self.write_file(config_dict, file_name)
+
+    def write_scan_config(self):   
+        file_name = '{0}.json'.format(self._name_pattern.format('params'))     
+        config_dict = self._config
         self.write_file(config_dict, file_name)
 
     def write_file(self, data_dict, file_name):
