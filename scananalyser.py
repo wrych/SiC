@@ -249,7 +249,7 @@ class ScanAnalyser():
             data_width = 2
         with open(os.path.join(self._scan_path, 'data.txt'), 'w') as f:
             for index in range(data['x'].shape[0]):
-                f.write('{0}\n'.format('\t'.join([str(data[key][index]) for key in data]))
+                f.write('{0}\n'.format('\t'.join([str(data[key][index]) for key in data])))
 
     def plot_3d(self, fig):
         self.log(logging.INFO, 'Getting X data...')
@@ -280,16 +280,20 @@ class ScanAnalyser():
         fig = matplotlib.pyplot.figure()
         self._x_key = self.get_paths_by_key(kw_args['x_key'])
         self._y_key = self.get_paths_by_key(kw_args['y_key'])
-        if (len(self._param_paths) == 1):
-            pass#self.plot_2d(fig)
-        else:
-            self._z_key = self.get_paths_by_key(kw_args['z_key'])
-            pass#self.plot_3d(fig)
-        self.save_data()
-        self.publish_plot(fig)
-        if(display_plot):
-            self.display_plot(fig)
-            input('Press any key to continue')
+        try:
+            if (len(self._param_paths) == 1):
+                self.plot_2d(fig)
+            else:
+                self._z_key = self.get_paths_by_key(kw_args['z_key'])
+                self.plot_3d(fig)
+            self.save_data()
+            self.publish_plot(fig)
+            if(display_plot):
+                self.display_plot(fig)
+                input('Press any key to continue')
+        except Exception as e:
+            self.log(logging.WARN, 'Could not plot data.')
+            self.log(logging.INFO, e)
 
 if __name__ == '__main__':
     scan = sys.argv[1]
