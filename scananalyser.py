@@ -5,6 +5,7 @@ import numpy
 import copy
 import sys
 import logging
+import traceback
 
 import scans
 
@@ -14,14 +15,10 @@ def get_preconfigured_logger():
 
 class ScanAnalyser():
 
-    def __init__(self, scan_parameter, scan_path, scan_data=None, logger=sys.stdout):
+    def __init__(self, scan_path, scan_parameter=None, scan_data=None, logger=sys.stdout):
         self.set_logger(logger)
-        if (type(scan_parameter) == str):
-            self._scan_parameter = getattr(scans, scan_parameter)()
-            self.log(logging.INFO, 'Using scan {0}...'.format(scan_parameter))
-        else:
-            self._scan_parameter = scan_parameter
         self._scan_path = scan_path
+        self.set_scan_paramter(scan_parameter)
         self.log(logging.INFO, 'PATH {0}...'.format(scan_path))
         if (scan_data is not None):
             self._data = scan_data
@@ -43,6 +40,19 @@ class ScanAnalyser():
             self._logger.log(*args, **kw_args)
         else:
             pass
+        
+    def set_scan_paramter(self, scan_parameter):
+        if (type(scan_parameter) == str):
+            self._scan_parameter = getattr(scans, scan_parameter)()
+            self.log(logging.INFO, 'Using scan {0}...'.format(scan_parameter))
+        elif (scan_parameter is None):
+            self._scan_parameter = self.get_scan_config_from_file()
+        else:
+            self._scan_parameter = scan_parameter
+            
+    def get_scan_config_from_file(self):
+        with open(os.path.join(self._scan_path, 'scan_params.json'), 'r') as f:
+            return(json.load(f))
 
     def get_data(self, scan_path):
         data=[]
@@ -96,6 +106,7 @@ class ScanAnalyser():
             return(value_dict['values'])
 
     def get_array(self, parameter_path, parameter_type='scan'):
+        self.log(logging.DEBUG, 'Getting data {0}'.format(parameter_path[-1]))
         values = []
         for point in self._data:
             values.append(self.get_sub_item(parameter_path, point))
@@ -139,37 +150,33 @@ class ScanAnalyser():
 
     def get_value_and_param_paths(self):
         return(self.get_scan_key_paths(), self.get_meas_key_paths())
-
-    def plot_2d(self, fig):
-        self.log(logging.INFO, 'Getting X data...')
-        x = self.get_array(self._x_key)
-        self.log(logging.INFO, 'Getting Y data...')
-        y = self.get_array(self._y_key)
-        self.log(logging.INFO, 'Plotting')
-        if(len(y.shape) > 1):
-            num_plots = y.shape[1]
-            for i in range(num_plots):
-                ax = fig.add_subplot(2,(num_plots+1)/2,i+1)
-                self.plot_axis(ax, x, y[:,i], **self.get_2d_labels())
+    
+    def get_file_name(self, x_key, y_key, z_key=None, pre=None, format=None):
+        pre = pre if (pre is not None) else ''
+        if (z_key is None):
+            file_str = '{0}{xlabel}vs{ylabel}.{1}'.format(pre, format, **self.get_labels(x_key, y_key, separator='-'))
         else:
-            ax = fig.add_subplot(1,1,1)
-            self.plot_axis(ax, x, y, **self.get_2d_labels())
+            file_str = '{0}{xlabel}vs{ylabel}vs{zlabel}.{1}'.format(pre, format, **self.get_labels(x_key, y_key, z_key, separator='-'))  
+        return(file_str)
 
-    def publish_plot(self, fig):
-        print(self.get_2d_labels('-'))
-        fig.savefig(os.path.join(self._scan_path, 
-                                 'xy_scan.png'.format(**self.get_2d_labels('-'))))
+    def save_plot(self, fig, x_key, y_key, z_key=None, pre=None):
+        file_path = os.path.join(self._scan_path,self.get_file_name(x_key, y_key, z_key, pre=pre, format='png'))
+        self.log(logging.INFO, 'Saving plot to: {0}'.format(file_path))
+        fig.savefig(file_path)
 
     def display_plot(self, fig):
         fig.show()
 
-    def get_2d_labels(self, separator='/'):
-        return({
-            'xlabel': self.get_printable_name(self._x_key, separator), 
-            'ylabel': self.get_printable_name(self._y_key, separator),
-            })
+    def get_labels(self, x_key, y_key, z_key=None, separator='/'):
+        label_dict = {
+            'xlabel': self.get_printable_name(x_key, separator), 
+            'ylabel': self.get_printable_name(y_key, separator),
+            }
+        if (z_key is not None):
+            label_dict.update({'zlabel': self.get_printable_name(z_key, separator)})
+        return(label_dict)
 
-    def get_3d_labels(self, separator='/'):
+    def get_3d_labels(self, zseparator='/'):
         labels = self.get_2d_labels(separator)
         labels.update({'zlabel': self.get_printable_name(self._z_key, separator)})
         return(labels)
@@ -178,45 +185,29 @@ class ScanAnalyser():
         return(self.get_array(self.get_paths_by_key(key)))
 
     def get_indexes_by_key(self, key):
-        return(self.get_sub_item(key, self._scan_parameter['scan']))
+        return(numpy.array(self.get_sub_item(key, self._scan_parameter['scan'])))
 
     def get_reshape_order(self, x,y,z):
-        print(x.shape[0],y.shape[0],z.shape[0])
-        x_len = x.shape[0]-1
-        y_len = y.shape[0]-1
-        search_index = x_len if (x_len < y_len) else y_len
-        x_val = self.get_sub_item_by_index(self._x_key, search_index)
-        y_val = self.get_sub_item_by_index(self._y_key, search_index)
-        if (abs(x[search_index]-x_val)<abs(y[search_index]-y_val)):
-            return('C')
-        else:
-            return('F')
+        return('c')
         
-
     def matshow_axis(self, ax, x, y, z, 
                      label=None, 
                      xlabel=None, 
                      ylabel=None, 
                      zlabel=None,
-                     vmax=None):
+                     norm=None,
+                     cmap=None):
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         if (z.shape[0] != x.shape[0]*y.shape[0]):
             numpy.pad(z, (x.shape[0]*y.shape[0]-z.shape[0]), 'constant', constant_values=0)
         z = z.reshape(x.shape[0], y.shape[0], order=self.get_reshape_order(x,y,z))
-        try:        
-            z = numpy.flip(z, axis=1)
-        except:
-            pass
-        norm = matplotlib.colors.SymLogNorm(linthresh=1e-9,
-                                            linscale=1e-9,
-                                            vmin = 0,
-                                            vmax=vmax)
-        ax.imshow(z,
+        return(ax.imshow(z,
                   aspect='equal',
-                  extent = (numpy.max(x), numpy.min(x), numpy.max(y), numpy.min(y)),
+                  extent = (numpy.min(x), numpy.max(x), numpy.min(y), numpy.max(y)),
                   norm = norm,
-                  origin='upper')
+                  cmap = cmap,
+                  origin='upper'))
 
     def get_center_2d(self):
         z = self.get_array(self._z_key)
@@ -227,81 +218,132 @@ class ScanAnalyser():
         y = self.get_sub_item_by_index(self._y_key, min_index)
         return(x, y)
 
-    def plot_to_do(self):#ToDo
-        x = self.get_sub_item_by_index(self._x_key, min_index)
-        y = self.get_sub_item_by_index(self._y_key, min_index)
-        self.log(logging.INFO, 'Getting X data...')
-        x = self.get_indexes_by_key(self._x_key)
-        self.log(logging.INFO, 'Getting Y data...')
-        y = self.get_indexes_by_key(self._y_key)
-
-    def save_data(self):
-        self.log(logging.INFO, 'Getting X data...')
+    def save_data(self, x_key, y_key, z_key=None, pre=None):
         data = {}
-        data['x'] = self.get_array(self._x_key)
-        self.log(logging.INFO, 'Getting Y data...')
-        data['y'] = self.get_array(self._y_key)
+        data['x'] = self.get_array(x_key)
+        data['y'] = self.get_array(y_key)
         try:
-            self.log(logging.INFO, 'Getting Z data...')
-            data['z'] = self.get_array(self._z_key)
+            data['z'] = self.get_array(z_key)
             data_width = 3
         except:
             data_width = 2
-        with open(os.path.join(self._scan_path, 'data.txt'), 'w') as f:
+        file_path = os.path.join(self._scan_path, self.get_file_name(x_key, y_key, z_key, pre, format='txt'))
+        self.log(logging.INFO, 'Saving data to: {0}'.format(file_path))
+        with open(file_path, 'w') as f:
             for index in range(data['x'].shape[0]):
                 f.write('{0}\n'.format('\t'.join([str(data[key][index]) for key in data])))
 
-    def plot_3d(self, fig):
-        self.log(logging.INFO, 'Getting X data...')
-        x = self.get_indexes_by_key(self._x_key)
-        self.log(logging.INFO, 'Getting Y data...')
-        y = self.get_indexes_by_key(self._y_key)
-        self.log(logging.INFO, 'Getting Z data...')
-        z = self.get_array(self._z_key)
+    def plot_2d(self, x_key, y_key, display_plot):
+        fig = matplotlib.pyplot.figure()
+        x = self.get_array(x_key)
+        y = self.get_array(y_key)
         self.log(logging.INFO, 'Plotting')
-        if(len(z.shape) > 1):
-            vmax = numpy.max(z)
-            num_plots = z.shape[1]
-            kw_args = self.get_3d_labels()
-            kw_args.update({'vmax':vmax})
+        if(len(y.shape) > 1):
+            num_plots = y.shape[1]
             for i in range(num_plots):
                 ax = fig.add_subplot(2,(num_plots+1)/2,i+1)
-                self.matshow_axis(ax, x, y, z[:,i], **kw_args)
+                self.plot_axis(ax, x, y[:,i], **self.get_2d_labels(x_key, y_key))
         else:
             ax = fig.add_subplot(1,1,1)
-            self.matshow_axis(ax, x, y, z, **self.get_3d_labels())   
+            self.plot_axis(ax, x, y, **self.get_2d_labels())
+        self.publish_plot(fig, display_plot, x_key, y_key)
+    
+    def get_fig(self):
+        return(matplotlib.pyplot.figure(figsize=(12,9)))
+    
+    def add_color_bar(self, fig, ax, cmap):
+        fig.subplots_adjust(left=0.1, bottom=0.1, right=0.8, top=0.9, wspace=None, hspace=None)
+        cax = fig.add_axes([0.8, 0.1, 0.1, 0.8])
+        fig.colorbar(ax, cmap=cmap, cax=cax)
+        
+    def get_cmap(self):
+        return(matplotlib.pyplot.get_cmap('plasma'))
+        
+    def get_norm(self, vmin, vmax):
+        norm = matplotlib.colors.SymLogNorm(linthresh=1e-10,
+                                        linscale=1e-10,
+                                        vmin=vmin,
+                                        vmax=vmax)
+            
+    def plot_3d_per_pad(self, x, y, z, x_key, y_key, z_key, display_plot):
+        fig = self.get_fig()
+        norm = self.get_norm(numpy.min(z), numpy.max(z))
+        cmap = self.get_cmap()
+        kw_args = self.get_labels(x_key, y_key, z_key)
+        kw_args.update({
+            'norm': norm,
+            'cmap': cmap
+            })
+        num_plots = z.shape[1]
+        for i in range(num_plots):
+            ax = fig.add_subplot(2,(num_plots+1)/2,i+1)
+            cax = self.matshow_axis(ax, x, y, z[:,i], **kw_args)
+        self.add_color_bar(fig, cax, cmap)
+        self.publish_plot(fig, display_plot, x_key, y_key, z_key, name='4pads')
+
+    def plot_3d_sum(self, x, y, z, x_key, y_key, z_key, display_plot):
+        z = numpy.sum(z, axis=1)
+        self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, name='sum')
+
+    def plot_3d_single(self, x, y, z, x_key, y_key, z_key, display_plot, name=None):
+        fig = self.get_fig()
+        norm = self.get_norm(numpy.min(z), numpy.max(z))
+        cmap = self.get_cmap()
+        kw_args = self.get_labels(x_key, y_key, z_key)
+        kw_args.update({
+            'norm': norm,
+            'cmap': cmap
+            })
+        ax = fig.add_subplot(1,1,1)
+        cax = self.matshow_axis(ax, x, y, z, **kw_args)
+        self.add_color_bar(fig, cax, cmap)
+        self.publish_plot(fig, display_plot, x_key, y_key, z_key, name=name)
+
+    def plot_3d(self, x_key, y_key, z_key, display_plot):
+        x = self.get_indexes_by_key(x_key)
+        y = self.get_indexes_by_key(y_key)
+        z = self.get_array(z_key)
+        self.log(logging.INFO, 'Plotting')
+        if(len(z.shape) > 1):
+            self.plot_3d_per_pad(x, y, z, x_key, y_key, z_key, display_plot)
+            self.plot_3d_sum(x, y, z, x_key, y_key, z_key, display_plot)
+        else:
+            self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot)
+            
+    def publish_plot(self, fig, display_plot, x_key, y_key, z_key=None, name=None):
+        self.save_plot(fig, x_key, y_key, z_key, name)
+        if(display_plot):
+            self.display_plot(fig)
+            raw_input('Press any key to continue')
 
     def get_paths_by_key(self, key, path_list=None):
         if (path_list is None):
             path_list = self._param_paths + self._value_paths
         return([path for path in path_list if path[-1] == key][0])
 
-    def plot(self, display_plot=False, **kw_args):
-        fig = matplotlib.pyplot.figure()
-        self._x_key = self.get_paths_by_key(kw_args['x_key'])
-        self._y_key = self.get_paths_by_key(kw_args['y_key'])
+    def plot(self, display_plot=True, **kw_args):
+        x_key = self.get_paths_by_key(kw_args['x_key'])
+        y_key = self.get_paths_by_key(kw_args['y_key'])
         try:
             if (len(self._param_paths) == 1):
-                self.plot_2d(fig)
+                self.plot_2d(x_key, y_key, display_plot)
             else:
-                self._z_key = self.get_paths_by_key(kw_args['z_key'])
-                self.plot_3d(fig)
-            self.save_data()
-            self.publish_plot(fig)
-            if(display_plot):
-                self.display_plot(fig)
-                input('Press any key to continue')
+                z_key = self.get_paths_by_key(kw_args['z_key'])
+                self.plot_3d(x_key, y_key, z_key, display_plot)
+            self.save_data(x_key, y_key, z_key)
         except Exception as e:
             self.log(logging.WARN, 'Could not plot data.')
-            self.log(logging.INFO, e)
+            self.log(logging.INFO, e)    
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback, file=sys.stdout)
+            print(e)
 
 if __name__ == '__main__':
-    scan = sys.argv[1]
-    folder = sys.argv[2]
-    scan_plotter = ScanAnalyser(scan, folder)
+    folder = sys.argv[1]
+    scan_plotter = ScanAnalyser(folder)
     scan_plotter.plot(x_key='xbpm_x_translation',
                       y_key='xbpm_y_translation',
                       z_key='currents')
-    print(scan_plotter.get_center_2d())
+    #print(scan_plotter.get_center_2d())
     #print(scan_plotter.get_center([2,4]))
     
