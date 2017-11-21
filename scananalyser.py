@@ -6,6 +6,7 @@ import copy
 import sys
 import logging
 import traceback
+import time
 
 import scans
 
@@ -40,7 +41,7 @@ class ScanAnalyser():
             self._logger.log(*args, **kw_args)
         else:
             pass
-        
+
     def set_scan_paramter(self, scan_parameter):
         if (type(scan_parameter) == str):
             self._scan_parameter = getattr(scans, scan_parameter)()
@@ -49,7 +50,7 @@ class ScanAnalyser():
             self._scan_parameter = self.get_scan_config_from_file()
         else:
             self._scan_parameter = scan_parameter
-            
+
     def get_scan_config_from_file(self):
         with open(os.path.join(self._scan_path, 'scan_params.json'), 'r') as f:
             return(json.load(f))
@@ -115,11 +116,29 @@ class ScanAnalyser():
     def get_printable_name(self, parameter_path, seperator='/'):
         return(seperator.join([item for item in parameter_path if (item not in ['config'])]))
 
-    def plot_axis(self, ax, x, y, label=None, xlabel=None, ylabel=None):
+    def plot_axis(self, ax, x, y,
+                  label=None,
+                  xlabel=None,
+                  ylabel=None,
+                  xlim=None,
+                  ylim=None,
+                  legend=False,
+                  title=None,
+                  scale='symlog'):
+        if (title is not None):
+            ax.set_title(title)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
-        ax.set_yscale('symlog', linthreshy=10e-10)
-        ax.plot(x,y, label=None)
+        if (scale == 'symlog'):
+            ax.set_yscale('symlog', linthreshy=10e-10)
+        else:
+            pass
+        ax.plot(x, y, label=label)
+        ax.set_xlim(xlim)
+        if (ylim is not None):
+            ax.set_ylim((ylim[0], ylim[1]*1.5))
+        if(legend):
+            ax.legend()
         return(ax)
 
     def get_data_as_arrays(self):
@@ -150,7 +169,7 @@ class ScanAnalyser():
 
     def get_value_and_param_paths(self):
         return(self.get_scan_key_paths(), self.get_meas_key_paths())
-    
+
     def get_file_name(self, x_key, y_key, z_key=None, pre=None, format=None):
         pre = pre if (pre is not None) else ''
         if (z_key is None):
@@ -158,6 +177,14 @@ class ScanAnalyser():
         else:
             file_str = '{0}{xlabel}vs{ylabel}vs{zlabel}.{1}'.format(pre, format, **self.get_labels(x_key, y_key, z_key, separator='-'))  
         return(file_str)
+
+    def get_title(self, x_key, y_key, z_key=None, pre=None):
+        pre = pre if (pre is not None) else ''
+        if (z_key is None):
+            title = '{0} {xlabel} vs {ylabel}'.format(pre, **self.get_labels(x_key, y_key, separator='-'))
+        else:
+            title = '{0} {xlabel} vs {ylabel} vs {zlabel}'.format(pre, **self.get_labels(x_key, y_key, z_key, separator='-'))  
+        return(title)
 
     def save_plot(self, fig, x_key, y_key, z_key=None, pre=None):
         file_path = os.path.join(self._scan_path,self.get_file_name(x_key, y_key, z_key, pre=pre, format='png'))
@@ -176,38 +203,36 @@ class ScanAnalyser():
             label_dict.update({'zlabel': self.get_printable_name(z_key, separator)})
         return(label_dict)
 
-    def get_3d_labels(self, zseparator='/'):
-        labels = self.get_2d_labels(separator)
-        labels.update({'zlabel': self.get_printable_name(self._z_key, separator)})
-        return(labels)
-
     def get_array_by_key(self, key):
         return(self.get_array(self.get_paths_by_key(key)))
 
     def get_indexes_by_key(self, key):
         return(numpy.array(self.get_sub_item(key, self._scan_parameter['scan'])))
 
-    def get_reshape_order(self, x,y,z):
+    def get_reshape_order(self, x, y, z):
         return('c')
-        
-    def matshow_axis(self, ax, x, y, z, 
-                     label=None, 
-                     xlabel=None, 
-                     ylabel=None, 
+
+    def matshow_axis(self, ax, x, y, z,
+                     label=None,
+                     xlabel=None,
+                     ylabel=None,
                      zlabel=None,
                      norm=None,
                      cmap=None):
+        if (label is not None):
+            ax.set_title(label)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         if (z.shape[0] != x.shape[0]*y.shape[0]):
             numpy.pad(z, (x.shape[0]*y.shape[0]-z.shape[0]), 'constant', constant_values=0)
         z = z.reshape(x.shape[0], y.shape[0], order=self.get_reshape_order(x,y,z))
-        return(ax.imshow(z,
-                  aspect='equal',
-                  extent = (numpy.min(x), numpy.max(x), numpy.min(y), numpy.max(y)),
-                  norm = norm,
-                  cmap = cmap,
-                  origin='upper'))
+        cax = ax.imshow(z,
+                        aspect='equal',
+                        extent=(numpy.min(x), numpy.max(x), numpy.min(y), numpy.max(y)),
+                        norm=norm,
+                        cmap=cmap,
+                        origin='upper')
+        return(cax)
 
     def get_center_2d(self):
         z = self.get_array(self._z_key)
@@ -224,51 +249,94 @@ class ScanAnalyser():
         data['y'] = self.get_array(y_key)
         try:
             data['z'] = self.get_array(z_key)
-            data_width = 3
         except:
-            data_width = 2
+            pass
         file_path = os.path.join(self._scan_path, self.get_file_name(x_key, y_key, z_key, pre, format='txt'))
         self.log(logging.INFO, 'Saving data to: {0}'.format(file_path))
         with open(file_path, 'w') as f:
             for index in range(data['x'].shape[0]):
                 f.write('{0}\n'.format('\t'.join([str(data[key][index]) for key in data])))
 
+    def plot_2d_per_pad(self, x, y, x_key, y_key, display_plot):
+        fig = self.get_fig()
+        num_plots = y.shape[1]
+        ylims = numpy.min(y), numpy.max(y)
+        for i in range(num_plots):
+            ax = fig.add_subplot(2, (num_plots+1)/2, i+1)
+            kw_args = self.get_labels(x_key, y_key)
+            kw_args.update({
+                'ylim': ylims,
+                'title': 'Pad {0}'.format(i)
+                })
+            self.plot_axis(ax, x, y[:, i], **kw_args)
+        self.publish_plot(fig, display_plot, x_key, y_key, name='4pad')
+
+    def plot_2d_overall(self, x, y, x_key, y_key, display_plot):
+        fig = self.get_fig()
+        num_plots = y.shape[1]
+        for i in range(num_plots):
+            ax = fig.add_subplot(2, 1, 1)
+            kw_args = self.get_labels(x_key, y_key)
+            kw_args.update({
+                'label': 'Pad {0}'.format(i),
+                'legend': True,
+                'title': 'Pad Overlayed'
+                })
+            self.plot_axis(ax, x, y[:, i], **kw_args)
+        ax = fig.add_subplot(2, 1, 2)
+        y = numpy.sum(y, axis=1)
+        median = numpy.median(y)
+        y /= median
+        kw_args.update({
+                'label': None,
+                'legend': False,
+                'title': 'Pad Sum',
+                'ylim': [0.9, 1.1/1.5],
+                'scale': 'linear'
+                })
+        self.plot_axis(ax, x, y, **kw_args)
+        self.publish_plot(fig, display_plot, x_key, y_key, name='overall')
+
     def plot_2d(self, x_key, y_key, display_plot):
-        fig = matplotlib.pyplot.figure()
         x = self.get_array(x_key)
         y = self.get_array(y_key)
         self.log(logging.INFO, 'Plotting')
         if(len(y.shape) > 1):
-            num_plots = y.shape[1]
-            for i in range(num_plots):
-                ax = fig.add_subplot(2,(num_plots+1)/2,i+1)
-                self.plot_axis(ax, x, y[:,i], **self.get_2d_labels(x_key, y_key))
+            self.plot_2d_per_pad(x, y, x_key, y_key, display_plot)
+            self.plot_2d_overall(x, y, x_key, y_key, display_plot)
         else:
-            ax = fig.add_subplot(1,1,1)
-            self.plot_axis(ax, x, y, **self.get_2d_labels())
-        self.publish_plot(fig, display_plot, x_key, y_key)
-    
+            ax = fig.add_subplot(1, 1, 1)
+            self.plot_axis(ax, x, y, **self.get_labels())
+
     def get_fig(self):
-        return(matplotlib.pyplot.figure(figsize=(12,9)))
-    
+        return(matplotlib.pyplot.figure(figsize=(12, 9)))
+
     def add_color_bar(self, fig, ax, cmap):
         fig.subplots_adjust(left=0.1, bottom=0.1, right=0.8, top=0.9, wspace=None, hspace=None)
-        cax = fig.add_axes([0.8, 0.1, 0.1, 0.8])
+        cax = fig.add_axes([0.85, 0.1, 0.05, 0.8])
         fig.colorbar(ax, cmap=cmap, cax=cax)
-        
-    def get_cmap(self):
-        return(matplotlib.pyplot.get_cmap('plasma'))
-        
-    def get_norm(self, vmin, vmax):
-        norm = matplotlib.colors.SymLogNorm(linthresh=1e-10,
-                                        linscale=1e-10,
-                                        vmin=vmin,
-                                        vmax=vmax)
-            
+
+    def get_cmap(self, value_type):
+        if (value_type == 'abs'):
+            return(matplotlib.pyplot.get_cmap('plasma'))
+        elif (value_type == 'flat'):
+            return(matplotlib.pyplot.get_cmap('coolwarm'))
+
+    def get_norm(self, vmin, vmax, scale='linear'):
+        if (scale == 'symlog'):
+            norm = matplotlib.colors.SymLogNorm(linthresh=1e-10,
+                                            linscale=1e-10,
+                                            vmin=vmin,
+                                            vmax=vmax)
+        else:
+            norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+        return(norm)
+
     def plot_3d_per_pad(self, x, y, z, x_key, y_key, z_key, display_plot):
         fig = self.get_fig()
+        fig.suptitle(self.get_title(x_key, y_key, z_key, pre='Pads'))
         norm = self.get_norm(numpy.min(z), numpy.max(z))
-        cmap = self.get_cmap()
+        cmap = self.get_cmap('abs')
         kw_args = self.get_labels(x_key, y_key, z_key)
         kw_args.update({
             'norm': norm,
@@ -276,8 +344,9 @@ class ScanAnalyser():
             })
         num_plots = z.shape[1]
         for i in range(num_plots):
-            ax = fig.add_subplot(2,(num_plots+1)/2,i+1)
-            cax = self.matshow_axis(ax, x, y, z[:,i], **kw_args)
+            ax = fig.add_subplot(2, (num_plots+1)/2, i+1)
+            kw_args.update({'label': 'Pad {0}'.format(i+1)})
+            cax = self.matshow_axis(ax, x, y, z[:, i], **kw_args)
         self.add_color_bar(fig, cax, cmap)
         self.publish_plot(fig, display_plot, x_key, y_key, z_key, name='4pads')
 
@@ -285,16 +354,31 @@ class ScanAnalyser():
         z = numpy.sum(z, axis=1)
         self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, name='sum')
 
-    def plot_3d_single(self, x, y, z, x_key, y_key, z_key, display_plot, name=None):
+    def plot_3d_rel(self, x, y, z, x_key, y_key, z_key, display_plot):
+        z = numpy.sum(z, axis=1)
+        median = numpy.median(z)
+        z /= median 
+        self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, cmap='flat', name='rel')
+
+    def plot_3d_std(self, x, y, z, x_key, y_key, z_key, display_plot):
+        z = numpy.std(z, axis=1)
+        self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, name='std')
+
+    def plot_3d_single(self, x, y, z, x_key, y_key, z_key, 
+                       display_plot, 
+                       cmap='abs', 
+                       name=None):
         fig = self.get_fig()
-        norm = self.get_norm(numpy.min(z), numpy.max(z))
-        cmap = self.get_cmap()
+        fig.suptitle(self.get_title(x_key, y_key, z_key, pre=name))
+        scale = 'linear' 
+        norm = self.get_norm(numpy.min(z), numpy.max(z), scale=scale)
+        cmap = self.get_cmap(cmap)
         kw_args = self.get_labels(x_key, y_key, z_key)
         kw_args.update({
             'norm': norm,
             'cmap': cmap
             })
-        ax = fig.add_subplot(1,1,1)
+        ax = fig.add_subplot(1, 1, 1)
         cax = self.matshow_axis(ax, x, y, z, **kw_args)
         self.add_color_bar(fig, cax, cmap)
         self.publish_plot(fig, display_plot, x_key, y_key, z_key, name=name)
@@ -307,14 +391,16 @@ class ScanAnalyser():
         if(len(z.shape) > 1):
             self.plot_3d_per_pad(x, y, z, x_key, y_key, z_key, display_plot)
             self.plot_3d_sum(x, y, z, x_key, y_key, z_key, display_plot)
+            self.plot_3d_rel(x, y, z, x_key, y_key, z_key, display_plot)
+            self.plot_3d_std(x, y, z, x_key, y_key, z_key, display_plot)
         else:
             self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot)
-            
+
     def publish_plot(self, fig, display_plot, x_key, y_key, z_key=None, name=None):
         self.save_plot(fig, x_key, y_key, z_key, name)
         if(display_plot):
             self.display_plot(fig)
-            raw_input('Press any key to continue')
+            time.sleep(3)
 
     def get_paths_by_key(self, key, path_list=None):
         if (path_list is None):
@@ -327,13 +413,14 @@ class ScanAnalyser():
         try:
             if (len(self._param_paths) == 1):
                 self.plot_2d(x_key, y_key, display_plot)
+                self.save_data(x_key, y_key)
             else:
                 z_key = self.get_paths_by_key(kw_args['z_key'])
                 self.plot_3d(x_key, y_key, z_key, display_plot)
-            self.save_data(x_key, y_key, z_key)
+                self.save_data(x_key, y_key, z_key)
         except Exception as e:
             self.log(logging.WARN, 'Could not plot data.')
-            self.log(logging.INFO, e)    
+            self.log(logging.INFO, e)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_tb(exc_traceback, file=sys.stdout)
             print(e)
@@ -341,9 +428,11 @@ class ScanAnalyser():
 if __name__ == '__main__':
     folder = sys.argv[1]
     scan_plotter = ScanAnalyser(folder)
-    scan_plotter.plot(x_key='xbpm_x_translation',
-                      y_key='xbpm_y_translation',
-                      z_key='currents')
+    #scan_plotter.plot(x_key='xbpm_x_translation',
+    #                  y_key='xbpm_y_translation',
+    #                  z_key='currents')    
+    scan_plotter.plot(x_key='xbpm_bias_voltage',
+                      y_key='currents')
     #print(scan_plotter.get_center_2d())
     #print(scan_plotter.get_center([2,4]))
     
