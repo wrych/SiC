@@ -188,9 +188,9 @@ class ScanAnalyser():
     def get_title(self, x_key, y_key, z_key=None, pre=None):
         pre = pre if (pre is not None) else ''
         if (z_key is None):
-            title = '{0} {xlabel} vs {ylabel}'.format(pre, **self.get_labels(x_key, y_key, separator='-'))
+            title = '{0} {xlabel} vs {ylabel}'.format(pre, **self.get_labels(x_key, y_key, separator='-', unit=False))
         else:
-            title = '{0} {xlabel} vs {ylabel} vs {zlabel}'.format(pre, **self.get_labels(x_key, y_key, z_key, separator='-'))  
+            title = '{0} {xlabel} vs {ylabel} vs {zlabel}'.format(pre, **self.get_labels(x_key, y_key, z_key, separator='-', unit=False))  
         return(title)
 
     def save_plot(self, fig, x_key, y_key, z_key=None, pre=None):
@@ -321,10 +321,10 @@ class ScanAnalyser():
     def get_fig(self):
         return(matplotlib.pyplot.figure(figsize=(12, 9)))
 
-    def add_color_bar(self, fig, ax, cmap):
+    def add_color_bar(self, fig, ax, cmap, label=''):
         fig.subplots_adjust(left=0.1, bottom=0.1, right=0.8, top=0.9, wspace=None, hspace=None)
         cax = fig.add_axes([0.85, 0.1, 0.05, 0.8])
-        fig.colorbar(ax, cmap=cmap, cax=cax)
+        fig.colorbar(ax, cmap=cmap, cax=cax, label=label)
 
     def get_cmap(self, value_type):
         if (value_type == 'abs'):
@@ -357,27 +357,35 @@ class ScanAnalyser():
             ax = fig.add_subplot(2, (num_plots+1)/2, i+1)
             kw_args.update({'label': 'Pad {0}'.format(i+1)})
             cax = self.matshow_axis(ax, x, y, z[:, i], **kw_args)
-        self.add_color_bar(fig, cax, cmap)
+        self.add_color_bar(fig, cax, cmap, label=kw_args['zlabel'])
         self.publish_plot(fig, display_plot, x_key, y_key, z_key, name='4pads')
 
     def plot_3d_sum(self, x, y, z, x_key, y_key, z_key, display_plot):
         z = numpy.sum(z, axis=1)
-        self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, name='sum')
+        self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, 
+                            name='sum',
+                            zlabel='Summed Currents [A]')
 
     def plot_3d_rel(self, x, y, z, x_key, y_key, z_key, display_plot):
         z = numpy.sum(z, axis=1)
         median = numpy.median(z)
         z /= median 
-        self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, cmap='flat', name='rel')
+        self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, 
+                            cmap='flat', 
+                            name='rel',
+                            zlabel='Normalized Summed Currents []')
 
     def plot_3d_std(self, x, y, z, x_key, y_key, z_key, display_plot):
         z = numpy.std(z, axis=1)
-        self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, name='std')
+        self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, 
+                            name='std',
+                            zlabel='Current Standard Deviation []')
 
     def plot_3d_single(self, x, y, z, x_key, y_key, z_key, 
-                       display_plot, 
-                       cmap='abs', 
-                       name=None):
+                       display_plot,
+                       cmap='abs',
+                       name=None,
+                       zlabel=None):
         fig = self.get_fig()
         fig.suptitle(self.get_title(x_key, y_key, z_key, pre=name))
         scale = 'linear' 
@@ -390,7 +398,9 @@ class ScanAnalyser():
             })
         ax = fig.add_subplot(1, 1, 1)
         cax = self.matshow_axis(ax, x, y, z, **kw_args)
-        self.add_color_bar(fig, cax, cmap)
+        if (zlabel is None):
+            zlabel = kw_args['zlabel']
+        self.add_color_bar(fig, cax, cmap, label=zlabel)
         self.publish_plot(fig, display_plot, x_key, y_key, z_key, name=name)
 
     def plot_3d(self, x_key, y_key, z_key, display_plot):
