@@ -10,9 +10,11 @@ import time
 
 import scans
 
+
 def get_preconfigured_logger():
     logging.basicConfig(level=logging.DEBUG)
     return(logging.getLogger('plot_scan'))
+
 
 class ScanAnalyser():
 
@@ -92,16 +94,16 @@ class ScanAnalyser():
     def get_meas_key_paths(self):
         return(self.get_key_paths('meas'))
 
-    def get_sub_item_by_index(self, key_path, index):
-        return(self.get_sub_item(key_path, self._data[index]))
+    def get_sub_item_by_index(self, key_path, index, key='value'):
+        return(self.get_sub_item(key_path, self._data[index], key))
 
-    def get_sub_item(self, key_path, value_dict):
+    def get_sub_item(self, key_path, value_dict, key='value'):
         key_path = copy.copy(key_path)
         while (len(key_path) > 0):
             value_dict = value_dict[key_path[0]]
             del(key_path[0])
         try:
-            return(value_dict['value']['value'])
+            return(value_dict['value'][key])
         except:
             # fix inconsitency in scan and data files, remove
             return(value_dict['values'])
@@ -113,8 +115,13 @@ class ScanAnalyser():
             values.append(self.get_sub_item(parameter_path, point))
         return(numpy.asarray(values))
 
-    def get_printable_name(self, parameter_path, seperator='/'):
-        return(seperator.join([item for item in parameter_path if (item not in ['config'])]))
+    def get_printable_name(self, parameter_path, seperator='/', unit=True):
+        path_str = seperator.join([item for item in parameter_path if (item not in ['config'])])
+        if (unit):
+            return('{0} [{1}]'.format(path_str,
+                                      self.get_sub_item_by_index(parameter_path, 0, 'unit')))
+        else:
+            return(path_str)
 
     def plot_axis(self, ax, x, y,
                   label=None,
@@ -173,9 +180,9 @@ class ScanAnalyser():
     def get_file_name(self, x_key, y_key, z_key=None, pre=None, format=None):
         pre = pre if (pre is not None) else ''
         if (z_key is None):
-            file_str = '{0}{xlabel}vs{ylabel}.{1}'.format(pre, format, **self.get_labels(x_key, y_key, separator='-'))
+            file_str = '{0}{xlabel}vs{ylabel}.{1}'.format(pre, format, **self.get_names(x_key, y_key, separator='-'))
         else:
-            file_str = '{0}{xlabel}vs{ylabel}vs{zlabel}.{1}'.format(pre, format, **self.get_labels(x_key, y_key, z_key, separator='-'))  
+            file_str = '{0}{xlabel}vs{ylabel}vs{zlabel}.{1}'.format(pre, format, **self.get_names(x_key, y_key, z_key, separator='-'))  
         return(file_str)
 
     def get_title(self, x_key, y_key, z_key=None, pre=None):
@@ -194,13 +201,16 @@ class ScanAnalyser():
     def display_plot(self, fig):
         fig.show()
 
-    def get_labels(self, x_key, y_key, z_key=None, separator='/'):
+    def get_names(self, x_key, y_key, z_key=None, separator='-'):
+        return(self.get_labels(x_key, y_key, z_key, separator, unit=False))
+
+    def get_labels(self, x_key, y_key, z_key=None, separator='/', unit=True):
         label_dict = {
-            'xlabel': self.get_printable_name(x_key, separator), 
-            'ylabel': self.get_printable_name(y_key, separator),
+            'xlabel': self.get_printable_name(x_key, separator, unit=unit),
+            'ylabel': self.get_printable_name(y_key, separator, unit=unit)
             }
         if (z_key is not None):
-            label_dict.update({'zlabel': self.get_printable_name(z_key, separator)})
+            label_dict.update({'zlabel': self.get_printable_name(z_key, separator, unit=unit)})
         return(label_dict)
 
     def get_array_by_key(self, key):
