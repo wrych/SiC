@@ -361,13 +361,11 @@ class ScanAnalyser():
         self.publish_plot(fig, display_plot, x_key, y_key, z_key, name='4pads')
 
     def plot_3d_sum(self, x, y, z, x_key, y_key, z_key, display_plot):
-        z = numpy.sum(z, axis=1)
         self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, 
                             name='sum',
                             zlabel='Summed Currents [A]')
 
     def plot_3d_rel(self, x, y, z, x_key, y_key, z_key, display_plot):
-        z = numpy.sum(z, axis=1)
         median = numpy.median(z)
         z /= median 
         self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, 
@@ -376,7 +374,6 @@ class ScanAnalyser():
                             zlabel='Normalized Summed Currents []')
 
     def plot_3d_std(self, x, y, z, x_key, y_key, z_key, display_plot):
-        z = numpy.std(z, axis=1)
         self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot, 
                             name='std',
                             zlabel='Current Standard Deviation []')
@@ -410,11 +407,14 @@ class ScanAnalyser():
         self.log(logging.INFO, 'Plotting')
         if(len(z.shape) > 1):
             self.plot_3d_per_pad(x, y, z, x_key, y_key, z_key, display_plot)
+            z = numpy.sum(z, axis=1)
             self.plot_3d_sum(x, y, z, x_key, y_key, z_key, display_plot)
             self.plot_3d_rel(x, y, z, x_key, y_key, z_key, display_plot)
             self.plot_3d_std(x, y, z, x_key, y_key, z_key, display_plot)
         else:
             self.plot_3d_single(x, y, z, x_key, y_key, z_key, display_plot)
+            self.plot_3d_rel(x, y, z, x_key, y_key, z_key, display_plot)
+            self.plot_3d_std(x, y, z, x_key, y_key, z_key, display_plot)
 
     def publish_plot(self, fig, display_plot, x_key, y_key, z_key=None, name=None):
         self.save_plot(fig, x_key, y_key, z_key, name)
@@ -448,11 +448,11 @@ class ScanAnalyser():
 if __name__ == '__main__':
     folder = sys.argv[1]
     scan_plotter = ScanAnalyser(folder)
-    #scan_plotter.plot(x_key='xbpm_x_translation',
-    #                  y_key='xbpm_y_translation',
-    #                  z_key='currents')    
-    scan_plotter.plot(x_key='xbpm_bias_voltage',
-                      y_key='currents')
+    scan_plotter.plot(x_key='xbpm_x_translation',
+                      y_key='xbpm_y_translation',
+                      z_key='diode_current')    
+    #scan_plotter.plot(x_key='xbpm_bias_voltage',
+    #                  y_key='currents')
     #print(scan_plotter.get_center_2d())
     #print(scan_plotter.get_center([2,4]))
     
