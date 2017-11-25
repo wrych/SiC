@@ -108,6 +108,20 @@ class ScanAnalyser():
             # fix inconsitency in scan and data files, remove
             return(value_dict['values'])
 
+    def get_array_and_norm(self, parameter_path, norm_by_key=None, parameter_type='scan'):
+        array = self.get_array(parameter_path, parameter_type)
+        if (norm_by_key is None):
+            return(array)
+        else:
+            norm = self.get_array(norm_by_key)
+            median = numpy.median(norm)
+            try:
+                for i in range(array.shape[1]):
+                    array[:, i] = array[:, i]/norm*median
+            except IndexError:
+                array = array/norm*median
+            return(array)
+
     def get_array(self, parameter_path, parameter_type='scan'):
         self.log(logging.DEBUG, 'Getting data {0}'.format(parameter_path[-1]))
         values = []
@@ -220,7 +234,7 @@ class ScanAnalyser():
         return(numpy.array(self.get_sub_item(key, self._scan_parameter['scan'])))
 
     def get_reshape_order(self, x, y, z):
-        return('c')
+        return('f')
 
     def matshow_axis(self, ax, x, y, z,
                      label=None,
@@ -307,9 +321,9 @@ class ScanAnalyser():
         self.plot_axis(ax, x, y, **kw_args)
         self.publish_plot(fig, display_plot, x_key, y_key, name='overall')
 
-    def plot_2d(self, x_key, y_key, display_plot):
+    def plot_2d(self, x_key, y_key, display_plot, norm_by_key=None):
         x = self.get_array(x_key)
-        y = self.get_array(y_key)
+        y = self.get_array_and_norm(y_key, norm_by_key=norm_by_key)
         self.log(logging.INFO, 'Plotting')
         if(len(y.shape) > 1):
             self.plot_2d_per_pad(x, y, x_key, y_key, display_plot)
@@ -400,10 +414,10 @@ class ScanAnalyser():
         self.add_color_bar(fig, cax, cmap, label=zlabel)
         self.publish_plot(fig, display_plot, x_key, y_key, z_key, name=name)
 
-    def plot_3d(self, x_key, y_key, z_key, display_plot):
+    def plot_3d(self, x_key, y_key, z_key, display_plot, norm_by_key=None):
         x = self.get_indexes_by_key(x_key)
         y = self.get_indexes_by_key(y_key)
-        z = self.get_array(z_key)
+        z = self.get_array_and_norm(z_key, norm_by_key=norm_by_key)
         self.log(logging.INFO, 'Plotting')
         if(len(z.shape) > 1):
             self.plot_3d_per_pad(x, y, z, x_key, y_key, z_key, display_plot)
@@ -427,16 +441,18 @@ class ScanAnalyser():
             path_list = self._param_paths + self._value_paths
         return([path for path in path_list if path[-1] == key][0])
 
-    def plot(self, display_plot=True, **kw_args):
-        x_key = self.get_paths_by_key(kw_args['x_key'])
-        y_key = self.get_paths_by_key(kw_args['y_key'])
+    def plot(self, x_key, y_key, display_plot=True, z_key=None, norm_by_key=None):
+        x_key = self.get_paths_by_key(x_key)
+        y_key = self.get_paths_by_key(y_key)
+        if (norm_by_key is not None):
+            norm_by_key = self.get_paths_by_key(norm_by_key)
         try:
             if (len(self._param_paths) == 1):
                 self.plot_2d(x_key, y_key, display_plot)
-                self.save_data(x_key, y_key)
+                self.save_data(x_key, y_key, norm_by_key=norm_by_key)
             else:
-                z_key = self.get_paths_by_key(kw_args['z_key'])
-                self.plot_3d(x_key, y_key, z_key, display_plot)
+                z_key = self.get_paths_by_key(z_key)
+                self.plot_3d(x_key, y_key, z_key, display_plot, norm_by_key=norm_by_key)
                 self.save_data(x_key, y_key, z_key)
         except Exception as e:
             self.log(logging.WARN, 'Could not plot data.')
@@ -450,7 +466,8 @@ if __name__ == '__main__':
     scan_plotter = ScanAnalyser(folder)
     scan_plotter.plot(x_key='xbpm_x_translation',
                       y_key='xbpm_y_translation',
-                      z_key='diode_current')    
+                      z_key='diode_current',
+                      norm_by_key=None)
     #scan_plotter.plot(x_key='xbpm_bias_voltage',
     #                  y_key='currents')
     #print(scan_plotter.get_center_2d())
