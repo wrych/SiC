@@ -13,9 +13,6 @@ import numpy
 import sys
 import os
 
-DEVICE = 'pin12'
-SCAN = 'forward_bias'
-
 class UserScan(collectorobject.CollectorObject):
     def __init__(self, device, name, path_identifier, scan_name=None, scan_kw_args={}, logger=sys.stdout):
         super(UserScan, self).__init__(logger)

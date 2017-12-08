@@ -1,2 +1,2 @@
 from resources.template import *
-from resources.epicsclient import *
+from resources.X05DA import *

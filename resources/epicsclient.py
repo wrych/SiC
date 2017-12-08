@@ -7,26 +7,26 @@ import numpy
 class Epics(collectorobject.Resource):
 
     KEYS = {
-        'shutter_open': 'X05DA-OP-CTRL:SH_ON',
-        'storage_ring_current': 'X05DA-ED-PP',
-        'photon_energy_d': 'X05DA-OP-MO:E_SET',
-        'photon_energy_rbv': 'X05DA-OP-MO:E_RBV',
-        'frontend_slits_width': 'X05DA-OP-FEAU:HWIDTH_RBV',
-        'jj_slits_v_size': 'X05DA-ES-JJ:SVsize',
-        'jj_slits_h_size': 'X05DA-ES-JJ:SHsize',
-        'xbpm_z_translation_d': 'X05DA-ES-PP:M23.VAL',
-        'xbpm_y_translation_d': 'X05DA-ES-PP:M24.VAL',
-        'xbpm_x_translation_d': 'X05DA-ES-PP:M25.VAL',
-        'xbpm_z_translation_rbv': 'X05DA-ES-PP:M23.RBV',
-        'xbpm_y_translation_rbv': 'X05DA-ES-PP:M24.RBV',
-        'xbpm_x_translation_rbv': 'X05DA-ES-PP:M25.RBV',
-        'xbpm_bias_state': 'X05DA-KEI10:VOLTOUT',
-        'xbpm_bias_voltage': 'X05DA-KEI10:SETVOLTAGE',
-        'diode_bias_state': 'X05DA-KEI12:VOLTOUT',
-        'diode_bias_voltage': 'X05DA-KEI12:SETVOLTAGE',
-        'diode_current': 'X05DA-KEI12:READOUT',
-        'diode_range': 'X05DA-KEI12:RANGE',
-        'filter_wheel': 'X05DA-ES-FW:FILTER'
+        'shutter_open': 'OP-CTRL:SH_ON',
+        'storage_ring_current': 'ED-PP',
+        'photon_energy_d': 'OP-MO:E_SET',
+        'photon_energy_rbv': 'OP-MO:E_RBV',
+        'frontend_slits_width': 'OP-FEAU:HWIDTH_RBV',
+        'jj_slits_v_size': 'ES-JJ:SVsize',
+        'jj_slits_h_size': 'ES-JJ:SHsize',
+        'xbpm_z_translation_d': 'ES-PP:M23.VAL',
+        'xbpm_y_translation_d': 'ES-PP:M24.VAL',
+        'xbpm_x_translation_d': 'ES-PP:M25.VAL',
+        'xbpm_z_translation_rbv': 'ES-PP:M23.RBV',
+        'xbpm_y_translation_rbv': 'ES-PP:M24.RBV',
+        'xbpm_x_translation_rbv': 'ES-PP:M25.RBV',
+        'xbpm_bias_state': 'KEI10:VOLTOUT',
+        'xbpm_bias_voltage': 'KEI10:SETVOLTAGE',
+        'diode_bias_state': 'KEI12:VOLTOUT',
+        'diode_bias_voltage': 'KEI12:SETVOLTAGE',
+        'diode_current': 'KEI12:READOUT',
+        'diode_range': 'KEI12:RANGE',
+        'filter_wheel': 'ES-FW:FILTER'
     }
 
     AH501D_KEYS = {
@@ -54,12 +54,17 @@ class Epics(collectorobject.Resource):
         'compute_current_offset_2': 'ComputeCurrentOffset3',
         'compute_current_offset_3': 'ComputeCurrentOffset4'
         }
+    
+    def __init__(self, beam_line, logger=sys.stdout):
+        self.beam_line = beam_line
+        super(Epics, self).__init__(logger)
+        
 
-    def initialize(self, config):
-        self.ah501d = "X05DA-ES-QEM1:"
-        self.build_getter_setter(self.ah501d, self.AH501D_KEYS, True)
-        self.build_getter_setter(self.ah501d, self.AH501D_NO_RBV_KEYS, False)
-        self.build_getter_setter('', self.KEYS, False)
+    def initialize(self, config, beam_line):
+        self.ah501d = "ES-QEM1:"
+        self.build_getter_setter(self.beam_line, self.ah501d, self.AH501D_KEYS, True)
+        self.build_getter_setter(self.beam_line, self.ah501d, self.AH501D_NO_RBV_KEYS, False)
+        self.build_getter_setter(self.beam_line, '', self.KEYS, False)
         self.get_xbpm_x_translation = self.get_xbpm_x_translation_rbv
         self.get_xbpm_y_translation = self.get_xbpm_y_translation_rbv
         self.get_xbpm_z_translation = self.get_xbpm_z_translation_rbv
@@ -76,20 +81,20 @@ class Epics(collectorobject.Resource):
         for i in range(4):
             getattr(self, 'set_compute_current_offset_{0}'.format(i))
 
-    def build_getter_setter(self, device, config, rbv):
+    def build_getter_setter(self, beam_line, device, config, rbv):
         for key, value in config.items():
             if (rbv):
                 setattr(self, '_{0}_rbv'.format(key),
-                        epics.PV(self.get_device_command_str(device, '{0}{1}'.format(value, '_RBV'))))
+                        epics.PV(self.get_device_command_str(beam_line, device, '{0}{1}'.format(value, '_RBV'))))
             setattr(self, '_{0}'.format(key),
-                    epics.PV(self.get_device_command_str(device, value)))
+                    epics.PV(self.get_device_command_str(beam_line, device, value)))
             setattr(self, 'get_{0}'.format(key),
                     getattr(self, '_{0}{1}'.format(key,'_rbv' if rbv else '')).get)
             setattr(self, 'set_{0}'.format(key),
                     getattr(self, '_{0}'.format(key)).put)
 
-    def get_device_command_str(self, device, command):
-        return('{0}{1}'.format(device, command))
+    def get_device_command_str(self, beam_line, device, command):
+        return('{0}-{1}{2}'.format(beam_linedevice, command))
 
     def get_command(self, device, command):
         epics.caget(self.get_device_command_str(device, command))

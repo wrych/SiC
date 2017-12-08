@@ -441,7 +441,7 @@ class ScanAnalyser():
             path_list = self._param_paths + self._value_paths
         return([path for path in path_list if path[-1] == key][0])
 
-    def plot(self, x_key, y_key, display_plot=True, z_key=None, norm_by_key=None):
+    def plot(self, x_key, y_key, display_plot=False, z_key=None, norm_by_key=None):
         x_key = self.get_paths_by_key(x_key)
         y_key = self.get_paths_by_key(y_key)
         if (norm_by_key is not None):
