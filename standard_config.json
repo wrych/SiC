@@ -84,7 +84,7 @@
             },
             "averaging_time":{
                 "type": "value",
-                "value": 1,
+                "value": 0.5,
                 "dtype": "float",
                 "unit": "s"
             },
