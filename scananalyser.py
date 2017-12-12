@@ -108,20 +108,6 @@ class ScanAnalyser():
             # fix inconsitency in scan and data files, remove
             return(value_dict['values'])
 
-    def get_array_and_norm(self, parameter_path, norm_by_key=None, parameter_type='scan'):
-        array = self.get_array(parameter_path, parameter_type)
-        if (norm_by_key is None):
-            return(array)
-        else:
-            norm = self.get_array(norm_by_key)
-            median = numpy.median(norm)
-            try:
-                for i in range(array.shape[1]):
-                    array[:, i] = array[:, i]/norm*median
-            except IndexError:
-                array = array/norm*median
-            return(array)
-
     def get_array(self, parameter_path, parameter_type='scan'):
         self.log(logging.DEBUG, 'Getting data {0}'.format(parameter_path[-1]))
         values = []
@@ -171,8 +157,8 @@ class ScanAnalyser():
         self.log(logging.DEBUG, 'Maximum value: {0}...'.format(value))
         return(value)
 
-    def get_min_index_between_pads(self, pads):
-        data = self.get_array(self._value_paths[0])
+    def get_min_index_between_pads(self, pads, y_key):
+        data = self.get_array_by_key(y_key)
         min_index = numpy.argmin(numpy.abs(numpy.subtract(*[data[:,index] for index in pads])))
         self.log(logging.DEBUG, 'Minimum difference at measurement {0}...'.format(min_index))
         return(min_index)
@@ -183,10 +169,10 @@ class ScanAnalyser():
         else:
             return(pads-1)
 
-    def get_center(self, pads, param_key='currents'):
+    def get_center(self, pads, x_key, y_key):
         value_indexes = self.get_index_from_pads(pads)
-        min_index = self.get_min_index_between_pads(value_indexes)
-        return(self.get_sub_item_by_index(self.get_param_by_key(param_key), min_index))
+        min_index = self.get_min_index_between_pads(value_indexes, y_key) 
+        return(self.get_sub_item_by_index(self.get_paths_by_key(x_key), min_index))
 
     def get_value_and_param_paths(self):
         return(self.get_scan_key_paths(), self.get_meas_key_paths())
@@ -258,13 +244,13 @@ class ScanAnalyser():
                         origin='upper')
         return(cax)
 
-    def get_center_2d(self):
-        z = self.get_array(self._z_key)
+    def get_center_2d(self, x_key, y_key, z_key):
+        z = self.get_array_by_key(z_key)
         std_dev = numpy.std(z, axis=1)
         min_index = numpy.argmin(std_dev)
         self.log(logging.DEBUG, 'Lowest std dev at measurement point {0}'.format(min_index))
-        x = self.get_sub_item_by_index(self._x_key, min_index)
-        y = self.get_sub_item_by_index(self._y_key, min_index)
+        x = self.get_sub_item_by_index(self.get_paths_by_key(x_key), min_index)
+        y = self.get_sub_item_by_index(self.get_paths_by_key(y_key), min_index)
         return(x, y)
 
     def save_data(self, x_key, y_key, z_key=None, pre=None):
@@ -321,9 +307,9 @@ class ScanAnalyser():
         self.plot_axis(ax, x, y, **kw_args)
         self.publish_plot(fig, display_plot, x_key, y_key, name='overall')
 
-    def plot_2d(self, x_key, y_key, display_plot, norm_by_key=None):
+    def plot_2d(self, x_key, y_key, display_plot):
         x = self.get_array(x_key)
-        y = self.get_array_and_norm(y_key, norm_by_key=norm_by_key)
+        y = self.get_array(y_key)
         self.log(logging.INFO, 'Plotting')
         if(len(y.shape) > 1):
             self.plot_2d_per_pad(x, y, x_key, y_key, display_plot)
@@ -414,10 +400,10 @@ class ScanAnalyser():
         self.add_color_bar(fig, cax, cmap, label=zlabel)
         self.publish_plot(fig, display_plot, x_key, y_key, z_key, name=name)
 
-    def plot_3d(self, x_key, y_key, z_key, display_plot, norm_by_key=None):
+    def plot_3d(self, x_key, y_key, z_key, display_plot):
         x = self.get_indexes_by_key(x_key)
         y = self.get_indexes_by_key(y_key)
-        z = self.get_array_and_norm(z_key, norm_by_key=norm_by_key)
+        z = self.get_array(z_key)
         self.log(logging.INFO, 'Plotting')
         if(len(z.shape) > 1):
             self.plot_3d_per_pad(x, y, z, x_key, y_key, z_key, display_plot)
@@ -441,18 +427,16 @@ class ScanAnalyser():
             path_list = self._param_paths + self._value_paths
         return([path for path in path_list if path[-1] == key][0])
 
-    def plot(self, x_key, y_key, display_plot=False, z_key=None, norm_by_key=None):
-        x_key = self.get_paths_by_key(x_key)
-        y_key = self.get_paths_by_key(y_key)
-        if (norm_by_key is not None):
-            norm_by_key = self.get_paths_by_key(norm_by_key)
+    def plot(self, display_plot=False, **kw_args):
+        x_key = self.get_paths_by_key(kw_args['x_key'])
+        y_key = self.get_paths_by_key(kw_args['y_key'])
         try:
             if (len(self._param_paths) == 1):
                 self.plot_2d(x_key, y_key, display_plot)
-                self.save_data(x_key, y_key, norm_by_key=norm_by_key)
+                self.save_data(x_key, y_key)
             else:
-                z_key = self.get_paths_by_key(z_key)
-                self.plot_3d(x_key, y_key, z_key, display_plot, norm_by_key=norm_by_key)
+                z_key = self.get_paths_by_key(kw_args['z_key'])
+                self.plot_3d(x_key, y_key, z_key, display_plot)
                 self.save_data(x_key, y_key, z_key)
         except Exception as e:
             self.log(logging.WARN, 'Could not plot data.')
@@ -464,12 +448,15 @@ class ScanAnalyser():
 if __name__ == '__main__':
     folder = sys.argv[1]
     scan_plotter = ScanAnalyser(folder)
+    #scan_plotter.plot(x_key='xbpm_x_translation',
+    #                  y_key='xbpm_y_translation',
+    #                  z_key='currents')    
     scan_plotter.plot(x_key='xbpm_x_translation',
-                      y_key='xbpm_y_translation',
-                      z_key='diode_current',
-                      norm_by_key=None)
-    #scan_plotter.plot(x_key='xbpm_bias_voltage',
-    #                  y_key='currents')
-    #print(scan_plotter.get_center_2d())
-    #print(scan_plotter.get_center([2,4]))
+                      y_key='currents')
+    #print(scan_plotter.get_center_2d(x_key='xbpm_x_translation',
+    #                                 y_key='xbpm_y_translation',
+    #                                 z_key='currents'))
+    print(scan_plotter.get_center(pads=[1,2],
+                                  x_key='xbpm_x_translation', 
+                                  y_key='currents'))
     

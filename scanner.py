@@ -13,6 +13,9 @@ import numpy
 import sys
 import os
 
+DEVICE = 'pin12'
+SCAN = 'forward_bias'
+
 class UserScan(collectorobject.CollectorObject):
     def __init__(self, device, name, path_identifier, scan_name=None, scan_kw_args={}, logger=sys.stdout):
         super(UserScan, self).__init__(logger)
@@ -70,7 +73,7 @@ class UserScan(collectorobject.CollectorObject):
         self._scan = collectorobject.Scan(self._obj, self._scan_config, self._scan_root_path)
 
     def setup_folders(self):
-        self._scan_root_path = os.path.join('/sls/X10SA/data/???/sicrigi/data', self._device, self._path_identifier, self._scan_name)
+        self._scan_root_path = os.path.join('/sls/X05DA/data/e16578/Data1/sicrigi/', self._device, self._path_identifier, self._scan_name)
         os.makedirs(self._scan_root_path)
         return(self._scan_root_path)
 
@@ -84,7 +87,7 @@ class UserScan(collectorobject.CollectorObject):
 
     def _post_scan(self):
         self.log(logging.INFO, 'Executing Post Scan Operations...')
-        self. _analysis = scananalyser.ScanAnalyser(self._scan_config, self._scan.get_scan_path(), scan_data=self._scan.get_data_points())
+        self. _analysis = scananalyser.ScanAnalyser(self._scan.get_scan_path(), self._scan_config, scan_data=self._scan.get_data_points())
         self.post_scan()
 
     def post_scan(self):

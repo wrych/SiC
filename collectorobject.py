@@ -64,6 +64,8 @@ class Resource(CollectorObject):
             value = params['value']
             if ('w' in self._children[key].get_access_mode()):
                 self._children[key].set_value(value)
+            else:
+                self.log(logging.WARN, 'Failed to set {0}, read-only value, skipping...'.format(key))
         except:
             pass
 
@@ -356,12 +358,14 @@ class Value(CollectorObject):
         init_value = getter()
         setter(value)
         retries = 1
+        set_tries = 0
         while(abs(getter()-value)>acceptable_delta):
             time.sleep(.2)
             if ((retries%20) == 0 and getter() == init_value):
-                self.log(logging.WARN, 'No difference in value detected, trying to re set value.')
+                set_tries += 1
+                self.log(logging.WARN, 'No difference in value detected, trying to re set value ({0}/{1}).'.format(set_tries, 5))
                 setter(value)
-            if(retries > 200):
+            if(set_tries > 5):
                 self.log(logging.WARN, 'No difference in value detected, failed to re set value. Raising E...')
                 raise(Exception('Could not set value'))
             retries += 1
