@@ -87,12 +87,12 @@ if __name__ == '__main__':
                                       'y_range': numpy.arange(1.5,-1.51,-0.20)})
     last_time = get_time_diff(start_time, last_time)
     # Transparancy Scan
-    for photon_energy in [5600.0, 8000.0, 12400.0, 17500.0]:
-        scans.TransparancyScan(device=device, 
-                           beam_size=0.2,
-                           photon_energy=photon_energy, 
-                           bias=max_bias, 
-                           path_identifier=date_str)
-    last_time = get_time_diff(start_time, last_time)
+    #for photon_energy in [5600.0, 8000.0, 12400.0, 17500.0]:
+    #    scans.TransparancyScan(device=device, 
+    #                       beam_size=0.2,
+    #                       photon_energy=photon_energy, 
+    #                       bias=max_bias, 
+    #                       path_identifier=date_str)
+    #last_time = get_time_diff(start_time, last_time)
     
 
