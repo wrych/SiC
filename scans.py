@@ -184,9 +184,9 @@ def transparancy_scan():
 		    'Epics': {
 			    'type': 'resource',
 			    'config': {
-				    'xbpm_x_translation': {
+				    'xbpm_y_translation': {
 					    'type': 'value',
-					    'values': [0.0,60.0]
+					    'values': [0.0,40.0]
 				    }
 			    }
 		    }
