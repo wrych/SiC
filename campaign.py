@@ -38,11 +38,11 @@ if __name__ == '__main__':
 
 #--------
     #max_bias = 30.0     #This for Diamond
-    max_bias = 0.0     #This for SiC
+    max_bias = 10.0     #This for SiC
 #-------    
 
     ## Forward Bias Scan    
-    scans.ForwardBiasScan(device=device, path_identifier=date_str)
+    #scans.ForwardBiasScan(device=device, path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
     ## Reverse Bias Scan 
     reverse_bias = scans.ReverseBiasScan(device=device, path_identifier=date_str, current_range=2)
@@ -56,12 +56,11 @@ if __name__ == '__main__':
     
 
     ## Transparancy Scan
-    for index, beam_size in enumerate([0.010, 0.050, 0.200]):
-        scans.TransparancyScan(device=device, 
-                           diode_pool=5,
+    for index, beam_size in enumerate([3, 0, 2]):
+        scans.TransparancyScan(device=device,
                            beam_size=beam_size,
                            bias=max_bias, 
-                           scan_name='trans_scan_{0:0>5}eV'.format(photon_energy),
+                           scan_name='trans_scan_{0}apt'.format(beam_size),
                            path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
    
@@ -148,7 +147,7 @@ if __name__ == '__main__':
     
     ## XY Very Coarse Scan
     scans.XYScan(device=device,
-                        beam_size=0.2,
+                        beam_size=0,
                         bias=max_bias, 
                         path_identifier=date_str,
                         scan_name='xy_scan_very_coarse',

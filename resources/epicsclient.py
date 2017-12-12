@@ -1,36 +1,24 @@
 import collectorobject
 import logging
-import epics
 import time
+import epics
 import numpy
 
 class Epics(collectorobject.Resource):
 
     KEYS = {
-        'shutter_open': 'X10SA-OP-CTRL:SH_ON',
+        'shutter_open': 'X10SA-ES-PH1:SET',
 
         #'storage_ring_current': 'X10SA-ED-PP',
         'storage_ring_current': 'ARIDI-PCT:CURRENT',
 
-        'photon_energy_d': 'X10SA-OP-MO:E_SET',
-        'photon_energy_rbv': 'X10SA-OP-MO:E_RBV',
-        'frontend_slits_width': 'X10SA-OP-FEAU:HWIDTH_RBV',
-        'jj_slits_v_size': 'X10SA-ES-JJ:SVsize',
-        'jj_slits_h_size': 'X10SA-ES-JJ:SHsize',
-        'xbpm_z_translation_d': 'X10SA-ES-PP:M23.VAL',
-        'xbpm_y_translation_d': 'X10SA-ES-PP:M24.VAL',
-        'xbpm_x_translation_d': 'X10SA-ES-PP:M25.VAL',
-        'xbpm_z_translation_rbv': 'X10SA-ES-PP:M23.RBV',
-        'xbpm_y_translation_rbv': 'X10SA-ES-PP:M24.RBV',
-        'xbpm_x_translation_rbv': 'X10SA-ES-PP:M25.RBV',
-        'xbpm_bias_state': 'X10SA-KEI10:VOLTOUT',
-        'xbpm_bias_voltage': 'X10SA-KEI10:SETVOLTAGE',
-        'diode_bias_state': 'X10SA-KEI12:VOLTOUT',
-        'diode_bias_voltage': 'X10SA-KEI12:SETVOLTAGE',
-        'diode_current': 'X10SA-KEI12:READOUT',
-        'diode_range': 'X10SA-KEI12:RANGE',
-        'diode_pool':  'X10SA-KEI12:READSCAN.SCAN',
-        'filter_wheel_d': 'X10SA-ES-FW:FILTER'
+        'aperature': 'X10SA-ES-APT:SET',
+        'xbpm_y_translation_d': 'X10SA-ES-OMS4:MOTY.VAL',
+        'xbpm_x_translation_d': 'X10SA-ES-OMS4:MOTX.VAL',
+        'xbpm_y_translation_rbv': 'X10SA-ES-OMS4:MOTY.RBV',
+        'xbpm_x_translation_rbv': 'X10SA-ES-OMS4:MOTX.RBV',
+        'diode_current': 'X10SA-ES-XEYE_K:READOUT',
+        'diode_range': 'X10SA-ES-XEYE_K:RANGE',
     }
 
     AH501D_KEYS = {
@@ -45,7 +33,9 @@ class Epics(collectorobject.Resource):
         'mean_value_0': 'Current1:MeanValue',
         'mean_value_1': 'Current2:MeanValue',
         'mean_value_2': 'Current3:MeanValue',
-        'mean_value_3': 'Current4:MeanValue'
+        'mean_value_3': 'Current4:MeanValue',
+        'xbpm_bias_state': 'BiasState',
+        'xbpm_bias_voltage': 'BiasVoltage'
         }
 
     AH501D_NO_RBV_KEYS = {
@@ -66,13 +56,13 @@ class Epics(collectorobject.Resource):
         self.build_getter_setter('', self.KEYS, False)
         self.get_xbpm_x_translation = self.get_xbpm_x_translation_rbv
         self.get_xbpm_y_translation = self.get_xbpm_y_translation_rbv
-        self.get_xbpm_z_translation = self.get_xbpm_z_translation_rbv
+        #self.get_xbpm_z_translation = self.get_xbpm_z_translation_rbv
         self.set_xbpm_x_translation = self.set_xbpm_x_translation_d
         self.set_xbpm_y_translation = self.set_xbpm_y_translation_d
-        self.set_xbpm_z_translation = self.set_xbpm_z_translation_d
-        self.get_filter_wheel = self.get_filter_wheel_d
-        self.get_photon_energy = self.get_photon_energy_rbv
-        self.set_photon_energy = self.set_photon_energy_d
+        #self.set_xbpm_z_translation = self.set_xbpm_z_translation_d
+        #self.get_filter_wheel = self.get_filter_wheel_d
+        #self.get_photon_energy = self.get_photon_energy_rbv
+        #self.set_photon_energy = self.set_photon_energy_d
         super(Epics, self).initialize(config)
 
     def set_filter_wheel(self, value):

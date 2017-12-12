@@ -7,8 +7,8 @@ import numpy
 
 import scanner
 
-def reverse_bias(vmax=60.0, vdelta=0.5):  #for Diamond and 10um SiC
-#def reverse_bias(vmax=10.0, vdelta=0.25):  #for <2um SiC
+#def reverse_bias(vmax=60.0, vdelta=0.5):  #for Diamond and 10um SiC
+def reverse_bias(vmax=10.0, vdelta=0.25):  #for <2um SiC
     return({
 	    'scan': {
 		    'Epics': {
@@ -186,9 +186,9 @@ def transparancy_scan():
 		    'Epics': {
 			    'type': 'resource',
 			    'config': {
-				    'xbpm_x_translation': {
+				    'xbpm_y_translation': {
 					    'type': 'value',
-					    'values': [0.0,71.0]
+					    'values': [0.0,-37.0]
 				    }
 			    }
 		    }
@@ -214,7 +214,6 @@ def transparancy_scan():
 class TransparancyScan(scanner.UserScan):
     def __init__(self, *args, **kw_args):
         kw_args.update({'name': 'transparancy_scan'})
-        kw_args = self.set_kw_args(kw_args, 'diode_pool')
         kw_args = self.set_kw_args(kw_args, 'beam_size')
         kw_args = self.set_kw_args(kw_args, 'bias')
         kw_args = self.set_kw_args(kw_args, 'photon_energy')
@@ -222,9 +221,7 @@ class TransparancyScan(scanner.UserScan):
 
     def pre_scan(self):
         self._obj.get_child('Epics').get_child('shutter_open').set_value(1)
-        self._obj.get_child('Epics').get_child('jj_slits_v_size').set_value(self._kw_beam_size)
-        self._obj.get_child('Epics').get_child('jj_slits_h_size').set_value(self._kw_beam_size)
-        self._obj.get_child('Epics').get_child('diode_pool').set_value(self._kw_diode_pool)
+        self._obj.get_child('Epics').get_child('aperature').set_value(self._kw_beam_size)
         time.sleep(20)
         self._obj.get_child('Epics').get_child('photon_energy').set_value(self._kw_photon_energy)
         self._obj.get_child('Epics').get_child('xbpm_bias_voltage').set_value(self._kw_bias)
@@ -374,8 +371,7 @@ class XYScan(scanner.UserScan):
         if (self._kw_photon_energy is not None):
             self._obj.get_child('Epics').get_child('photon_energy').set_value(self._kw_photon_energy)
         if (self._kw_beam_size is not None):
-            self._obj.get_child('Epics').get_child('jj_slits_v_size').set_value(self._kw_beam_size)
-            self._obj.get_child('Epics').get_child('jj_slits_h_size').set_value(self._kw_beam_size)
+            self._obj.get_child('Epics').get_child('aperature').set_value(self._kw_beam_size)
         time.sleep(15)
         if (self._kw_bias is not None):
             self._obj.get_child('Epics').get_child('xbpm_bias_voltage').set_value(self._kw_bias)
