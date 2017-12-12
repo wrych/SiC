@@ -216,14 +216,12 @@ class TransparancyScan(scanner.UserScan):
         kw_args.update({'name': 'transparancy_scan'})
         kw_args = self.set_kw_args(kw_args, 'beam_size')
         kw_args = self.set_kw_args(kw_args, 'bias')
-        kw_args = self.set_kw_args(kw_args, 'photon_energy')
         super(TransparancyScan, self).__init__(*args, **kw_args)
 
     def pre_scan(self):
         self._obj.get_child('Epics').get_child('shutter_open').set_value(1)
         self._obj.get_child('Epics').get_child('aperature').set_value(self._kw_beam_size)
         time.sleep(20)
-        self._obj.get_child('Epics').get_child('photon_energy').set_value(self._kw_photon_energy)
         self._obj.get_child('Epics').get_child('xbpm_bias_voltage').set_value(self._kw_bias)
 
     def post_scan(self):
@@ -358,7 +356,6 @@ class XYScan(scanner.UserScan):
         kw_args.update({'name': 'xy_scan'})
         kw_args = self.set_kw_args(kw_args, 'bias')
         kw_args = self.set_kw_args(kw_args, 'beam_size')
-        kw_args = self.set_kw_args(kw_args, 'photon_energy')
         kw_args = self.set_kw_args(kw_args, 'filter_wheel')
         super(XYScan, self).__init__(*args, **kw_args)
 
@@ -368,8 +365,6 @@ class XYScan(scanner.UserScan):
             self._obj.get_child('Epics').get_child('filter_wheel').set_value(self._kw_filter_wheel)
         self._obj.get_child('Epics').get_child('xbpm_x_translation').set_value(-4)
         self._obj.get_child('Epics').get_child('xbpm_y_translation').set_value(-4)
-        if (self._kw_photon_energy is not None):
-            self._obj.get_child('Epics').get_child('photon_energy').set_value(self._kw_photon_energy)
         if (self._kw_beam_size is not None):
             self._obj.get_child('Epics').get_child('aperature').set_value(self._kw_beam_size)
         time.sleep(15)

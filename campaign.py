@@ -45,17 +45,18 @@ if __name__ == '__main__':
     #scans.ForwardBiasScan(device=device, path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
     ## Reverse Bias Scan 
-    reverse_bias = scans.ReverseBiasScan(device=device, path_identifier=date_str, current_range=2)
-    last_time = get_time_diff(start_time, last_time)
-    scan_bias = reverse_bias.get_result()
-    if (scan_bias < max_bias):
-        max_bias = scan_bias
+    #reverse_bias = scans.ReverseBiasScan(device=device, path_identifier=date_str, current_range=2)
+    #last_time = get_time_diff(start_time, last_time)
+    #scan_bias = reverse_bias.get_result()    
+    #if (scan_bias < max_bias):
+    #    max_bias = scan_bias
     print('###############################')
     print('Determined Bias Setting:{0} V'.format(max_bias))
     print('###############################')
     
 
     ## Transparancy Scan
+    '''
     for index, beam_size in enumerate([3, 0, 2]):
         scans.TransparancyScan(device=device,
                            beam_size=beam_size,
@@ -63,9 +64,9 @@ if __name__ == '__main__':
                            scan_name='trans_scan_{0}apt'.format(beam_size),
                            path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
-   
+   '''
 #---
-    
+    '''
     ## Start OF CENTERING
     xy_scan_inst = scans.XYScan(device=device, 
                         bias=max_bias, 
@@ -97,7 +98,8 @@ if __name__ == '__main__':
     ## END OF CENTERING, with 10um resolution!
     
     ## CCE per pad
-    for pad_index in range(4):
+    
+    for pad_index in range(1):
         x_offsets = numpy.array([-0.5,0.5,-0.5,0.5])+center_h
         y_offsets = numpy.array([-0.5,-0.5,0.5,0.5])+center_v
         scans.ReverseBiasScanBeam(device=device, 
@@ -108,8 +110,8 @@ if __name__ == '__main__':
                                      y_offset=y_offsets[pad_index])
     
     last_time = get_time_diff(start_time, last_time)
-    
-
+        
+    '''
     ## High Resolution 1D Y Scan
     scans.YScan(device=device, 
                             x_offset=center_h+0.25,

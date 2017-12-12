@@ -448,15 +448,15 @@ class ScanAnalyser():
 if __name__ == '__main__':
     folder = sys.argv[1]
     scan_plotter = ScanAnalyser(folder)
-    #scan_plotter.plot(x_key='xbpm_x_translation',
-    #                  y_key='xbpm_y_translation',
-    #                  z_key='currents')    
     scan_plotter.plot(x_key='xbpm_x_translation',
-                      y_key='currents')
+                      y_key='xbpm_y_translation',
+                      z_key='diode_current')    
+    #scan_plotter.plot(x_key='xbpm_x_translation',
+    #                  y_key='currents')
     #print(scan_plotter.get_center_2d(x_key='xbpm_x_translation',
     #                                 y_key='xbpm_y_translation',
     #                                 z_key='currents'))
-    print(scan_plotter.get_center(pads=[1,2],
-                                  x_key='xbpm_x_translation', 
-                                  y_key='currents'))
+    #print(scan_plotter.get_center(pads=[1,2],
+    #                              x_key='xbpm_x_translation', 
+    #                              y_key='currents'))
     
