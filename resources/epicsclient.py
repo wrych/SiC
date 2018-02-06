@@ -7,18 +7,18 @@ import numpy
 class Epics(collectorobject.Resource):
 
     KEYS = {
-        'shutter_open': 'X10SA-ES-PH1:SET',
+        'shutter_open': 'X06SA-ES-PH1:SET',
 
-        #'storage_ring_current': 'X10SA-ED-PP',
+        #'storage_ring_current': 'X06SA-ED-PP',
         'storage_ring_current': 'ARIDI-PCT:CURRENT',
 
-        'aperature': 'X10SA-ES-APT:SET',
-        'xbpm_y_translation_d': 'X10SA-ES-OMS4:MOTY.VAL',
-        'xbpm_x_translation_d': 'X10SA-ES-OMS4:MOTX.VAL',
-        'xbpm_y_translation_rbv': 'X10SA-ES-OMS4:MOTY.RBV',
-        'xbpm_x_translation_rbv': 'X10SA-ES-OMS4:MOTX.RBV',
-        'diode_current': 'X10SA-ES-XEYE_K:READOUT',
-        'diode_range': 'X10SA-ES-XEYE_K:RANGE',
+        'aperature': 'X06SA-ES-APT:SET',
+        'xbpm_y_translation_d': 'X06SA-ES-XYZ:TRY1.VAL',
+        'xbpm_x_translation_d': 'X06SA-ES-XYZ:TRX1.VAL',
+        'xbpm_y_translation_rbv': 'X06SA-ES-XYZ:TRY1.RBV',
+        'xbpm_x_translation_rbv': 'X06SA-ES-XYZ:TRX1.RBV',
+        'diode_current': 'X06SA-ES-XEYE_K:READOUT',
+        'diode_range': 'X06SA-ES-XEYE_K:RANGE',
     }
 
     AH501D_KEYS = {
@@ -50,7 +50,7 @@ class Epics(collectorobject.Resource):
         }
 
     def initialize(self, config):
-        self.ah501d = "X10SA-ES-SSBPM2:"
+        self.ah501d = "X06SA-ES-KBBPM1:"
         self.build_getter_setter(self.ah501d, self.AH501D_KEYS, True)
         self.build_getter_setter(self.ah501d, self.AH501D_NO_RBV_KEYS, False)
         self.build_getter_setter('', self.KEYS, False)
