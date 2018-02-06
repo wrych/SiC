@@ -361,7 +361,7 @@ class Value(CollectorObject):
         set_tries = 0
         while(abs(getter()-value)>acceptable_delta):
             time.sleep(.2)
-            if ((retries%20) == 0 and getter() == init_value):
+            if ((retries%40) == 0 and getter() == init_value):
                 set_tries += 1
                 self.log(logging.WARN, 'No difference in value detected, trying to re set value ({0}/{1}).'.format(set_tries, 5))
                 setter(value)
@@ -369,7 +369,7 @@ class Value(CollectorObject):
                 self.log(logging.WARN, 'No difference in value detected, failed to re set value. Raising E...')
                 raise(Exception('Could not set value'))
             retries += 1
-        time.sleep(0.4)
+        time.sleep(0.2)
         return(True)
 
     def set_value(self, value):

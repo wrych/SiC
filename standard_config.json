@@ -5,8 +5,20 @@
         "config": {
             "current_range":{
 			        "type": "value",
-			        "value": 0,
+			        "value": 1,
                     "dtype": "int"
+        	    },
+            "xbpm_ds_sum":{
+			        "type": "value",
+		            "access_mode": "r",
+                    "dtype": "float",
+                    "unit": "nA"
+        	    },
+            "xbpm_us_sum":{
+			        "type": "value",
+		            "access_mode": "r",
+                    "dtype": "float",
+                    "unit": "nA"
         	    },
         	"xbpm_bias_state":{
 			        "type": "value",
@@ -20,6 +32,13 @@
                     "synced": 0.0,
                     "unit": "V"
                 },
+	        "transmission":{
+		            "type": "value",
+			        "value": 1.0,
+		            "access_mode": "rw",
+                    "unit": "",
+                    "dtype": "float"
+	        	},
 	        "diode_current":{
 		            "type": "value",
 		            "access_mode": "r",
@@ -27,7 +46,7 @@
 	        	},
             "diode_range": {
                     "type": "value",
-                    "value": 3,
+                    "value": 0,
                     "dtype": "int"
                 },
             "num_channels":{
@@ -80,11 +99,6 @@
         	"storage_ring_current":{
                     "type": "value",
                     "access_mode": "r"
-             	},
-        	"aperature":{
-                    "type": "value",
-                    "value": 2,
-                    "dtype": "int"
              	},
         	"xbpm_y_translation":{
                     "type": "value",

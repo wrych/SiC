@@ -60,6 +60,15 @@ def reverse_bias_beam(vmax=0.0, vdelta=0.025):  #THIS FOR SiC PiN
 				    },
 				    'diode_current':{
 					    'type': 'value'
+				    },
+				    'storage_ring_current':{
+					        'type': 'value'
+				    },
+				    'xbpm_ds_sum':{
+					        'type': 'value'
+				    },
+				    'xbpm_us_sum':{
+					        'type': 'value'
 				    }
 			    }
 		    }
@@ -114,6 +123,15 @@ def y_scan(y_center=0.0, y_range=numpy.arange(0.6, -0.601, -0.005)):
 				    },
 				    'diode_current':{
 					    'type': 'value'
+				    },
+				    'storage_ring_current':{
+					        'type': 'value'
+				    },
+				    'xbpm_ds_sum':{
+					        'type': 'value'
+				    },
+				    'xbpm_us_sum':{
+					        'type': 'value'
 				    }
 			    }
 		    }
@@ -142,6 +160,15 @@ def x_scan(x_center=0.0, x_range=numpy.arange(0.6, -0.601, -0.005)):
 				    },
 				    'diode_current':{
 					    'type': 'value'
+				    },
+				    'storage_ring_current':{
+					        'type': 'value'
+				    },
+				    'xbpm_ds_sum':{
+					        'type': 'value'
+				    },
+				    'xbpm_us_sum':{
+					        'type': 'value'
 				    }
 			    }
 		    }
@@ -174,13 +201,22 @@ def xy_scan(x_center=0.0, y_center=0.0, x_range=numpy.arange(0.70, -0.701, -0.05
 				    },
 				    'diode_current':{
 					    'type': 'value'
+				    },
+				    'storage_ring_current':{
+					        'type': 'value'
+				    },
+				    'xbpm_ds_sum':{
+					        'type': 'value'
+				    },
+				    'xbpm_us_sum':{
+					        'type': 'value'
 				    }
 			    }
 		    }
 	    }
     })
 
-def transparancy_scan():
+def transparancy_scan(out_of_beam_value=0.0):
     return({
 	    'scan': {
 		    'Epics': {
@@ -188,7 +224,7 @@ def transparancy_scan():
 			    'config': {
 				    'xbpm_y_translation': {
 					    'type': 'value',
-					    'values': [0.0,-37.0]
+					    'values': [0.0,out_of_beam_value]
 				    }
 			    }
 		    }
@@ -200,16 +236,61 @@ def transparancy_scan():
 				    'currents':{
 					    'type': 'value'
 				    },
-				'diode_current':{
+				    'diode_current':{
 					    'type': 'value'
 				    },
-				'storage_ring_current':{
+				    'storage_ring_current':{
+					    'type': 'value'
+				    },
+				    'xbpm_ds_sum':{
+					    'type': 'value'
+				    },
+				    'xbpm_us_sum':{
 					    'type': 'value'
 				    }
 			    }
 		    }
 	    }
     })
+
+
+def linearity_scan():
+    return({
+	    'scan': {
+		    'Epics': {
+			    'type': 'resource',
+			    'config': {
+				    'transmission': {
+					    'type': 'value',
+					    'values': [1.0,0.1,0.001,0.0001,0.00001]
+				    }
+			    }
+		    }
+	    },
+	    'meas':{
+		    'Epics': {
+			    'type': 'resource',
+			    'config': {
+				    'currents':{
+					    'type': 'value'
+				    },
+				    'diode_current':{
+					    'type': 'value'
+				    },
+				    'storage_ring_current':{
+					    'type': 'value'
+				    },
+				    'xbpm_ds_sum':{
+					    'type': 'value'
+				    },
+				    'xbpm_us_sum':{
+					    'type': 'value'
+				    }
+			    }
+		    }
+	    }
+    })
+
 
 class TransparancyScan(scanner.UserScan):
     def __init__(self, *args, **kw_args):
@@ -220,7 +301,7 @@ class TransparancyScan(scanner.UserScan):
 
     def pre_scan(self):
         self._obj.get_child('Epics').get_child('shutter_open').set_value(1)
-        self._obj.get_child('Epics').get_child('aperature').set_value(self._kw_beam_size)
+        #self._obj.get_child('Epics').get_child('aperature').set_value(self._kw_beam_size)
         time.sleep(20)
         self._obj.get_child('Epics').get_child('xbpm_bias_voltage').set_value(self._kw_bias)
 
@@ -366,7 +447,7 @@ class XYScan(scanner.UserScan):
         self._obj.get_child('Epics').get_child('xbpm_x_translation').set_value(-4)
         self._obj.get_child('Epics').get_child('xbpm_y_translation').set_value(-4)
         if (self._kw_beam_size is not None):
-            self._obj.get_child('Epics').get_child('aperature').set_value(self._kw_beam_size)
+            pass #self._obj.get_child('Epics').get_child('aperature').set_value(self._kw_beam_size)
         time.sleep(15)
         if (self._kw_bias is not None):
             self._obj.get_child('Epics').get_child('xbpm_bias_voltage').set_value(self._kw_bias)
@@ -386,3 +467,31 @@ class XYScan(scanner.UserScan):
                                               y_key='xbpm_y_translation',
                                               z_key='currents')
         return(result)
+
+class LinearityScan(scanner.UserScan):
+    def __init__(self, *args, **kw_args):
+        kw_args.update({'name': 'linearity_scan'})
+        kw_args = self.set_kw_args(kw_args, 'current_range')
+        kw_args = self.set_kw_args(kw_args, 'x_offset')
+        kw_args = self.set_kw_args(kw_args, 'y_offset')
+        super(LinearityScan, self).__init__(*args, **kw_args)
+
+    def pre_scan(self):
+        if (self._kw_current_range is not None):
+            self._obj.get_child('Epics').get_child('current_range').set_value(self._kw_current_range)
+        self._obj.get_child('Epics').compute_offset()
+        time.sleep(2)
+        self._obj.get_child('Epics').get_child('shutter_open').set_value(1)
+        self._obj.get_child('Epics').get_child('xbpm_x_translation').set_value(self._kw_x_offset)
+        self._obj.get_child('Epics').get_child('xbpm_y_translation').set_value(self._kw_y_offset)
+        time.sleep(15)
+
+    def post_scan(self):
+        pass
+
+    def tear_down(self):
+        self._obj.get_child('Epics').compute_offset()
+
+    def get_result(self):
+        return(None)
+

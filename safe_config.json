@@ -8,7 +8,7 @@
 			        "value": 1,
                     "dtype": "int"
         	    },
-        	"xbpm_bias_state":{
+            "xbpm_bias_state":{
 			        "type": "value",
 			        "value": 0,
                     "dtype": "int"
@@ -27,6 +27,13 @@
                     "value": 2,
                     "dtype": "int"
                 },
+	        "transmission":{
+		            "type": "value",
+			        "value": 1.0,
+		            "access_mode": "rw",
+                    "unit": "",
+                    "dtype": "float"
+	        	},
             "num_channels":{
                     "type": "value",
                     "value": 2,
@@ -54,7 +61,7 @@
                 },
         	"averaging_time":{
                     "type": "value",
-                    "value": 0.5,
+                    "value": 1.0,
                     "dtype": "float"
              	},
         	"shutter_open":{

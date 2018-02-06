@@ -12,13 +12,16 @@ class Epics(collectorobject.Resource):
         #'storage_ring_current': 'X06SA-ED-PP',
         'storage_ring_current': 'ARIDI-PCT:CURRENT',
 
-        'aperature': 'X06SA-ES-APT:SET',
         'xbpm_y_translation_d': 'X06SA-ES-XYZ:TRY1.VAL',
         'xbpm_x_translation_d': 'X06SA-ES-XYZ:TRX1.VAL',
         'xbpm_y_translation_rbv': 'X06SA-ES-XYZ:TRY1.RBV',
         'xbpm_x_translation_rbv': 'X06SA-ES-XYZ:TRX1.RBV',
-        'diode_current': 'X06SA-ES-XEYE_K:READOUT',
-        'diode_range': 'X06SA-ES-XEYE_K:RANGE',
+        'diode_current': 'X06SA-HR-XEYE_K:READOUT',
+        'diode_range': 'X06SA-HR-XEYE_K:RANGE',
+        'transmission_d': 'X06SA-ES-FI:TRANSM-SET',
+        'transmission_rbv': 'X06SA-ES-FI:TRANSM-GET',
+        'xbpm_ds_sum': 'X06SA-ES-KBBPM2:SUM',
+        'xbpm_us_sum': 'X06SA-ES-SSBPM1:SUM',
     }
 
     AH501D_KEYS = {
@@ -54,12 +57,19 @@ class Epics(collectorobject.Resource):
         self.build_getter_setter(self.ah501d, self.AH501D_KEYS, True)
         self.build_getter_setter(self.ah501d, self.AH501D_NO_RBV_KEYS, False)
         self.build_getter_setter('', self.KEYS, False)
+
+        # getter
         self.get_xbpm_x_translation = self.get_xbpm_x_translation_rbv
         self.get_xbpm_y_translation = self.get_xbpm_y_translation_rbv
-        #self.get_xbpm_z_translation = self.get_xbpm_z_translation_rbv
+        #self.get_xbpm_z_translation = self.get_xbpm_z_translation_rbv   
+        self.get_transmission = self.get_transmission_rbv
+
+        # setter
         self.set_xbpm_x_translation = self.set_xbpm_x_translation_d
         self.set_xbpm_y_translation = self.set_xbpm_y_translation_d
-        #self.set_xbpm_z_translation = self.set_xbpm_z_translation_d
+        #self.set_xbpm_z_translation = self.set_xbpm_z_translation_d        
+        #self.set_transmission = self.set_transmission_d
+
         #self.get_filter_wheel = self.get_filter_wheel_d
         #self.get_photon_energy = self.get_photon_energy_rbv
         #self.set_photon_energy = self.set_photon_energy_d
@@ -68,6 +78,10 @@ class Epics(collectorobject.Resource):
     def set_filter_wheel(self, value):
         self.set_filter_wheel_d(value)
         time.sleep(5)
+
+    def set_transmission(self, value):
+        self.set_transmission_d(value)
+        time.sleep(10)
 
     def compute_offset(self):
         self.log(logging.INFO, 'Compute Offsets')
@@ -108,7 +122,7 @@ class Epics(collectorobject.Resource):
         return(current)
 
     def acquire(self):
-        acquire_time = self.get_averaging_time()*2
+        acquire_time = self.get_averaging_time()+.5
         self.set_acquire(1)
         time.sleep(acquire_time)
 
