@@ -68,7 +68,7 @@
                     "type": "value",
                     "value": 0,
                     "dtype": "int"
-             	}
+             	},
         	"xbpm_y_translation":{
                     "type": "value",
                     "value": 0.0,

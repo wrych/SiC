@@ -36,10 +36,24 @@ if __name__ == '__main__':
 
     #--------
     #max_bias = 30.0     #This for Diamond
-    max_bias = 0.0     #This for SiC
+    max_bias = 2.0     #This for SiC
     #-------    
+
+    ## Start OF CENTERING
+    date_str = datetime.datetime.strftime(datetime.datetime.now(), '%Y%m%d_%H%M%S')
+    xy_scan_inst = scans.XYScan(device=device, 
+                        bias=max_bias, 
+                        path_identifier=date_str,
+                        scan_name='xy_centering_1',
+                        scan_kw_args={'x_center': center_h, 
+                                      'y_center': center_v, 
+                                      'x_range': numpy.arange(0.4,-0.41,-0.04), 
+                                      'y_range': numpy.arange(0.4,-0.41,-0.04)})   
+    last_time = get_time_diff(start_time, last_time)
+    center_h, center_v = xy_scan_inst.get_result()
+
     ## Forward Bias Scan  
-    for max_bias in numpy.arange(0,5.01,1):
+    for max_bias in numpy.arange(0,3.01,0.3):
         date_str = datetime.datetime.strftime(datetime.datetime.now(), '%Y%m%d_%H%M%S')
         '''  
         scans.ForwardBiasScan(device=device, path_identifier=date_str)
@@ -80,54 +94,6 @@ if __name__ == '__main__':
                                 x_offset = center_h+.25, 
                                 y_offset = center_v+.25)
             last_time = get_time_diff(start_time, last_time)
-
-        
-        ## Start OF CENTERING
-        xy_scan_inst = scans.XYScan(device=device, 
-                            bias=max_bias, 
-                            path_identifier=date_str,
-                            scan_name='xy_centering_1',
-                            scan_kw_args={'x_center': center_h, 
-                                          'y_center': center_v, 
-                                          'x_range': numpy.arange(0.4,-0.41,-0.04), 
-                                          'y_range': numpy.arange(0.4,-0.41,-0.04)})   
-        last_time = get_time_diff(start_time, last_time)
-        center_h, center_v = xy_scan_inst.get_result()
-        
-
-
-        
-        ## 
-        xy_scan_inst = scans.XYScan(device=device, 
-                            bias=max_bias, 
-                            path_identifier=date_str,
-                            scan_name='xy_centering_2',
-                            scan_kw_args={'x_center': center_h, 
-                                          'y_center': center_v, 
-                                          'x_range': numpy.arange(0.125,-0.1251,-0.01), 
-                                          'y_range': numpy.arange(0.125,-0.1251,-0.01)}) 
-        last_time = get_time_diff(start_time, last_time)
-
-        #---If broken, do not center!
-        center_h, center_v = xy_scan_inst.get_result()
-        
-
-        ## END OF CENTERING, with 10um resolution!
-        
-        ## CCE per pad
-        '''
-        for pad_index in range(1):
-            x_offsets = numpy.array([-0.5,0.5,-0.5,0.5])+center_h
-            y_offsets = numpy.array([-0.5,-0.5,0.5,0.5])+center_v
-            scans.ReverseBiasScanBeam(device=device, 
-                                         path_identifier=date_str,
-                                         shutter_open=1,
-                                         scan_name='cce_{0}'.format(pad_index+1),
-                                         x_offset=x_offsets[pad_index],
-                                         y_offset=y_offsets[pad_index])
-        
-        last_time = get_time_diff(start_time, last_time)
-        '''
         
         ## High Resolution 1D Y Scan
         scans.YScan(device=device, 
@@ -165,16 +131,4 @@ if __name__ == '__main__':
                                 path_identifier=date_str)
         last_time = get_time_diff(start_time, last_time)
            
-
-        ## XY Very Coarse Scan
-        scans.XYScan(device=device,
-                            beam_size=0,
-                            bias=max_bias, 
-                            path_identifier=date_str,
-                            scan_name='xy_scan_very_coarse',
-                            scan_kw_args={'x_center': center_h, 
-                                          'y_center': center_v, 
-                                          'x_range': numpy.arange(3.5,-3.51,-0.30), 
-                                          'y_range': numpy.arange(2.5,-2.51,-0.30)})
-        last_time = get_time_diff(start_time, last_time)
 

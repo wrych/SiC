@@ -58,7 +58,7 @@ if __name__ == '__main__':
     print('Determined Bias Setting:{0} V'.format(max_bias))
     print('###############################')
     
-    for bias_voltage in numpy.arange(0,10.1,2):
+    for bias_voltage in numpy.arange(0,10.1,1):
         ## High Resolution 1D Y Scan
         scans.YScan(device=device, 
                                 x_offset=center_h+0.25,

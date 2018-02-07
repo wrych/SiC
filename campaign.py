@@ -35,8 +35,10 @@ if __name__ == '__main__':
     last_time = get_time_diff(start_time, start_time)
 
     #--------
-    #max_bias = 30.0     #This for Diamond
-    max_bias = 0.0     #This for SiC
+    max_bias = 30.0     #This for Diamond
+    print('Warning, high bias, uA gain setting')
+    input('press any key to continue')
+    #max_bias = 2.0     #This for SiC
     #-------    
     ## Forward Bias Scan  
     '''  
@@ -71,7 +73,7 @@ if __name__ == '__main__':
     
 
     ## Linearity Scan
-    for xbpm_range in [2,1,0]:
+    for xbpm_range in [2,1]:
         scans.LinearityScan(device=device,
                             scan_name='linearity_xbpmrange_{0}'.format(xbpm_range),
                             path_identifier=date_str,
@@ -87,14 +89,14 @@ if __name__ == '__main__':
                         scan_name='xy_centering_1',
                         scan_kw_args={'x_center': center_h, 
                                       'y_center': center_v, 
-                                      'x_range': numpy.arange(0.4,-0.41,-0.04), 
-                                      'y_range': numpy.arange(0.4,-0.41,-0.04)})   
+                                      'x_range': numpy.arange(0.5,-0.51,-0.04), 
+                                      'y_range': numpy.arange(0.5,-0.51,-0.04)})   
     last_time = get_time_diff(start_time, last_time)
     center_h, center_v = xy_scan_inst.get_result()
     
 
 
-    
+    '''
     ## 
     xy_scan_inst = scans.XYScan(device=device, 
                         bias=max_bias, 
@@ -108,7 +110,7 @@ if __name__ == '__main__':
 
     #---If broken, do not center!
     center_h, center_v = xy_scan_inst.get_result()
-    
+    '''
 
     ## END OF CENTERING, with 10um resolution!
     
@@ -163,7 +165,7 @@ if __name__ == '__main__':
                             path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
        
-
+    '''
     ## XY Very Coarse Scan
     scans.XYScan(device=device,
                         beam_size=0,
@@ -175,4 +177,6 @@ if __name__ == '__main__':
                                       'x_range': numpy.arange(3.5,-3.51,-0.30), 
                                       'y_range': numpy.arange(2.5,-2.51,-0.30)})
     last_time = get_time_diff(start_time, last_time)
+    '''
+
 
