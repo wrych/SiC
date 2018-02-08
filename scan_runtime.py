@@ -50,7 +50,7 @@ if __name__ == '__main__':
         print(current_str)
         with open(file_path, 'a') as f:
             f.write('{0} {1}\n'.format(date_str, current_str))
-        time.sleep(.1)
+        time.sleep(2)
         
  
     

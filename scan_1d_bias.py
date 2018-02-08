@@ -58,12 +58,14 @@ if __name__ == '__main__':
     print('Determined Bias Setting:{0} V'.format(max_bias))
     print('###############################')
     
-    for bias_voltage in numpy.arange(0,10.1,1):
+    #for bias_voltage in numpy.arange(0,10.1,1):
+    for bias_voltage in numpy.arange(0,5.1,0.5):   #pin199
+
         ## High Resolution 1D Y Scan
         scans.YScan(device=device, 
                                 x_offset=center_h+0.25,
                                 scan_name='Yscan_13_{0}V'.format(bias_voltage), 
-                                scan_kw_args={'y_center':center_v, 'y_range':numpy.arange(.25,-.2501,-0.025)}, 
+                                scan_kw_args={'y_center':center_v, 'y_range':numpy.arange(.22,-.2201,-0.015)}, 
                                 bias=bias_voltage, 
                                 path_identifier=date_str)
         last_time = get_time_diff(start_time, last_time)
