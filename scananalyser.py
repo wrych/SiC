@@ -129,11 +129,14 @@ class ScanAnalyser():
             values.append(self.get_sub_item(parameter_path, point))
         return(numpy.asarray(values))
 
+    def get_unit_by_key(self, parameter_path):
+        return(self.get_sub_item_by_index(parameter_path, 0, 'unit'))
+
     def get_printable_name(self, parameter_path, seperator='/', unit=True):
         path_str = seperator.join([item for item in parameter_path if (item not in ['config'])])
         if (unit):
             return('{0} [{1}]'.format(path_str,
-                                      self.get_sub_item_by_index(parameter_path, 0, 'unit')))
+                                      self.get_unit_by_key(parameter_path)))
         else:
             return(path_str)
 
@@ -191,12 +194,15 @@ class ScanAnalyser():
     def get_value_and_param_paths(self):
         return(self.get_scan_key_paths(), self.get_meas_key_paths())
 
-    def get_file_name(self, x_key, y_key, z_key=None, pre=None, format=None):
+    def get_file_name(self, key, y_key=None, z_key=None, pre=None, format=None):
         pre = pre if (pre is not None) else ''
-        if (z_key is None):
-            file_str = '{0}{xlabel}vs{ylabel}.{1}'.format(pre, format, **self.get_names(x_key, y_key, separator='-'))
+        if (y_key is None):
+            file_str = '{0}{1}.{2}'.format(pre, self.get_printable_name(key, '-', unit=False), format)
+        elif (z_key is None):
+            file_str = '{0}{xlabel}vs{ylabel}.{1}'.format(pre, format, **self.get_names(key, y_key, separator='-'))
         else:
-            file_str = '{0}{xlabel}vs{ylabel}vs{zlabel}.{1}'.format(pre, format, **self.get_names(x_key, y_key, z_key, separator='-'))  
+            file_str = '{0}{xlabel}vs{ylabel}vs{zlabel}.{1}'.format(pre, format,
+                                                                    **self.get_names(key, y_key, z_key, separator='-'))
         return(file_str)
 
     def get_title(self, x_key, y_key, z_key=None, pre=None):
@@ -204,7 +210,10 @@ class ScanAnalyser():
         if (z_key is None):
             title = '{0} {xlabel} vs {ylabel}'.format(pre, **self.get_labels(x_key, y_key, separator='-', unit=False))
         else:
-            title = '{0} {xlabel} vs {ylabel} vs {zlabel}'.format(pre, **self.get_labels(x_key, y_key, z_key, separator='-', unit=False))  
+            title = '{0} {xlabel} vs {ylabel} vs {zlabel}'.format(pre,
+                                                                  **self.get_labels(x_key, y_key, z_key,
+                                                                                    separator='-',
+                                                                                    unit=False))
         return(title)
 
     def save_plot(self, fig, x_key, y_key, z_key=None, pre=None):
@@ -218,7 +227,7 @@ class ScanAnalyser():
     def get_names(self, x_key, y_key, z_key=None, separator='-'):
         return(self.get_labels(x_key, y_key, z_key, separator, unit=False))
 
-    def get_labels(self, x_key, y_key, z_key=None, separator='/', unit=True):
+    def get_labels(self, x_key, y_key=None, z_key=None, separator='/', unit=True):
         label_dict = {
             'xlabel': self.get_printable_name(x_key, separator, unit=unit),
             'ylabel': self.get_printable_name(y_key, separator, unit=unit)
@@ -233,9 +242,6 @@ class ScanAnalyser():
     def get_indexes_by_key(self, key):
         return(numpy.array(self.get_sub_item(key, self._scan_parameter['scan'])))
 
-    def get_reshape_order(self, x, y, z):
-        return('f')
-
     def matshow_axis(self, ax, x, y, z,
                      label=None,
                      xlabel=None,
@@ -247,14 +253,12 @@ class ScanAnalyser():
             ax.set_title(label)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
-        if (z.shape[0] != x.shape[0]*y.shape[0]):
-            numpy.pad(z, (x.shape[0]*y.shape[0]-z.shape[0]), 'constant', constant_values=0)
-        z = z.reshape(x.shape[0], y.shape[0], order=self.get_reshape_order(x,y,z))
         cax = ax.imshow(z,
                         aspect='equal',
                         extent=(numpy.min(x), numpy.max(x), numpy.min(y), numpy.max(y)),
                         norm=norm,
                         cmap=cmap,
+						interpolation=None,
                         origin='upper')
         return(cax)
 
@@ -267,19 +271,16 @@ class ScanAnalyser():
         y = self.get_sub_item_by_index(self._y_key, min_index)
         return(x, y)
 
-    def save_data(self, x_key, y_key, z_key=None, pre=None):
-        data = {}
-        data['x'] = self.get_array(x_key)
-        data['y'] = self.get_array(y_key)
-        try:
-            data['z'] = self.get_array(z_key)
-        except:
-            pass
-        file_path = os.path.join(self._scan_path, self.get_file_name(x_key, y_key, z_key, pre, format='txt'))
-        self.log(logging.INFO, 'Saving data to: {0}'.format(file_path))
-        with open(file_path, 'w') as f:
-            for index in range(data['x'].shape[0]):
-                f.write('{0}\n'.format('\t'.join([str(data[key][index]) for key in data])))
+    def save_data(self, x_key, y_key, z_key=None, pre=None, norm_by_key=None):
+        active_keys = [key for key in [x_key, y_key, z_key] if (key is not None)]
+        for key in active_keys:
+            data = self.get_array_and_norm(key, norm_by_key=norm_by_key if key == active_keys[-1] else None)
+            unit = self.get_unit_by_key(key)
+            file_path = os.path.join(self._scan_path,self.get_file_name(key, pre=pre, format='txt'))
+            self.log(logging.INFO, 'Saving {0} data to: {1}'.format(key, file_path))
+            with open(file_path, 'w') as f:
+                for index in range(data.shape[0]):
+                    f.write('{0} {1}\n'.format(data[index], unit))
 
     def plot_2d_per_pad(self, x, y, x_key, y_key, display_plot):
         fig = self.get_fig()
@@ -366,11 +367,11 @@ class ScanAnalyser():
             'norm': norm,
             'cmap': cmap
             })
-        num_plots = z.shape[1]
+        num_plots = z.shape[-1]
         for i in range(num_plots):
             ax = fig.add_subplot(2, (num_plots+1)/2, i+1)
             kw_args.update({'label': 'Pad {0}'.format(i+1)})
-            cax = self.matshow_axis(ax, x, y, z[:, i], **kw_args)
+            cax = self.matshow_axis(ax, x, y, z[:, :, i], **kw_args)
         self.add_color_bar(fig, cax, cmap, label=kw_args['zlabel'])
         self.publish_plot(fig, display_plot, x_key, y_key, z_key, name='4pads')
 
@@ -409,19 +410,44 @@ class ScanAnalyser():
             })
         ax = fig.add_subplot(1, 1, 1)
         cax = self.matshow_axis(ax, x, y, z, **kw_args)
-        if (zlabel is None):
+        if (zlabel is not None):
+            zlabel = '{0}\n{1}'.format(zlabel, kw_args['zlabel'])
+        else:
             zlabel = kw_args['zlabel']
         self.add_color_bar(fig, cax, cmap, label=zlabel)
         self.publish_plot(fig, display_plot, x_key, y_key, z_key, name=name)
 
+    def get_reshape_order(self, x, y, x_key, y_key):
+        x_mesh_c, y_mesh_c = [arr.flatten('c') for arr in numpy.meshgrid(x,y)]
+        x_mesh_f, y_mesh_f = [arr.flatten('f') for arr in numpy.meshgrid(x,y)]
+        x_real = self.get_array(x_key)
+        y_real = self.get_array(y_key)
+        if (numpy.sum(numpy.abs(x_mesh_c-x_real))+numpy.sum(numpy.abs(y_mesh_c-y_real)) >
+            numpy.sum(numpy.abs(x_mesh_f-x_real))+numpy.sum(numpy.abs(y_mesh_f-y_real))):
+            return('f')
+        else:
+            return('c')
+        
+    def get_2d_arrs(self, x,y,z, reshape_order):
+        if (z.shape[0] != x.shape[0]*y.shape[0]):
+            numpy.pad(z, (x.shape[0]*y.shape[0]-z.shape[0]), 'constant', constant_values=0)
+        print(x.shape, y.shape, z.shape)
+        if (len(z.shape) > 1):
+            return(z.reshape(x.shape[0], y.shape[0], z.shape[-1], order=reshape_order))
+        else:
+            return(z.reshape(x.shape[0], y.shape[0], order=reshape_order))
+        
     def plot_3d(self, x_key, y_key, z_key, display_plot, norm_by_key=None):
         x = self.get_indexes_by_key(x_key)
         y = self.get_indexes_by_key(y_key)
         z = self.get_array_and_norm(z_key, norm_by_key=norm_by_key)
+        reshape_order = self.get_reshape_order(x,y,x_key,y_key)
+        num_plots = z.shape[-1]
+        z = self.get_2d_arrs(x, y, z, reshape_order)
         self.log(logging.INFO, 'Plotting')
-        if(len(z.shape) > 1):
+        if(len(z.shape) > 2):
             self.plot_3d_per_pad(x, y, z, x_key, y_key, z_key, display_plot)
-            z = numpy.sum(z, axis=1)
+            z = numpy.sum(z, axis=-1)
             self.plot_3d_sum(x, y, z, x_key, y_key, z_key, display_plot)
             self.plot_3d_rel(x, y, z, x_key, y_key, z_key, display_plot)
             self.plot_3d_std(x, y, z, x_key, y_key, z_key, display_plot)
@@ -453,7 +479,7 @@ class ScanAnalyser():
             else:
                 z_key = self.get_paths_by_key(z_key)
                 self.plot_3d(x_key, y_key, z_key, display_plot, norm_by_key=norm_by_key)
-                self.save_data(x_key, y_key, z_key)
+                self.save_data(x_key, y_key, z_key, norm_by_key=norm_by_key)
         except Exception as e:
             self.log(logging.WARN, 'Could not plot data.')
             self.log(logging.INFO, e)
@@ -466,10 +492,11 @@ if __name__ == '__main__':
     scan_plotter = ScanAnalyser(folder)
     scan_plotter.plot(x_key='xbpm_x_translation',
                       y_key='xbpm_y_translation',
-                      z_key='diode_current',
+                      z_key='currents',
                       norm_by_key=None)
-    #scan_plotter.plot(x_key='xbpm_bias_voltage',
-    #                  y_key='currents')
+    #scan_plotter.plot(x_key='xbpm_x_translation',
+    #                  y_key='currents',
+    #                  norm_by_key=None)
     #print(scan_plotter.get_center_2d())
     #print(scan_plotter.get_center([2,4]))
     
