@@ -2,7 +2,7 @@ import collectorobject
 import logging
 import epics
 import time
-import numpy
+import sys
 
 class Epics(collectorobject.Resource):
 
@@ -20,8 +20,8 @@ class Epics(collectorobject.Resource):
         'xbpm_z_translation_rbv': 'ES-PP:M23.RBV',
         'xbpm_y_translation_rbv': 'ES-PP:M24.RBV',
         'xbpm_x_translation_rbv': 'ES-PP:M25.RBV',
-        'xbpm_bias_state': 'KEI10:VOLTOUT',
-        'xbpm_bias_voltage': 'KEI10:SETVOLTAGE',
+        'xbpm_bias_state': 'ES-QEM1:BiasState',
+        'xbpm_bias_voltage': 'ES-QEM1:BiasVoltage',
         'diode_bias_state': 'KEI12:VOLTOUT',
         'diode_bias_voltage': 'KEI12:SETVOLTAGE',
         'diode_current': 'KEI12:READOUT',
@@ -55,12 +55,12 @@ class Epics(collectorobject.Resource):
         'compute_current_offset_3': 'ComputeCurrentOffset4'
         }
     
-    def __init__(self, beam_line, logger=sys.stdout):
+    def __init__(self, beam_line='X05DA', logger=sys.stdout):
         self.beam_line = beam_line
         super(Epics, self).__init__(logger)
         
 
-    def initialize(self, config, beam_line):
+    def initialize(self, config):
         self.ah501d = "ES-QEM1:"
         self.build_getter_setter(self.beam_line, self.ah501d, self.AH501D_KEYS, True)
         self.build_getter_setter(self.beam_line, self.ah501d, self.AH501D_NO_RBV_KEYS, False)
@@ -80,6 +80,7 @@ class Epics(collectorobject.Resource):
         self.acquire()
         for i in range(4):
             getattr(self, 'set_compute_current_offset_{0}'.format(i))
+#plot(x,y)
 
     def build_getter_setter(self, beam_line, device, config, rbv):
         for key, value in config.items():
@@ -94,7 +95,7 @@ class Epics(collectorobject.Resource):
                     getattr(self, '_{0}'.format(key)).put)
 
     def get_device_command_str(self, beam_line, device, command):
-        return('{0}-{1}{2}'.format(beam_linedevice, command))
+        return('{0}-{1}{2}'.format(beam_line, device, command))
 
     def get_command(self, device, command):
         epics.caget(self.get_device_command_str(device, command))
@@ -114,7 +115,7 @@ class Epics(collectorobject.Resource):
         return(current)
 
     def acquire(self):
-        acquire_time = self.get_averaging_time()*2
+        acquire_time = self.get_averaging_time()+0.5
         self.set_acquire(1)
         time.sleep(acquire_time)
 

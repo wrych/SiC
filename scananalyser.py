@@ -262,13 +262,17 @@ class ScanAnalyser():
                         origin='upper')
         return(cax)
 
-    def get_center_2d(self):
-        z = self.get_array(self._z_key)
+    def get_center_2d(self, x_key, y_key, z_key):
+        x_key = self.get_paths_by_key(x_key)
+        y_key = self.get_paths_by_key(y_key)
+        z_key = self.get_paths_by_key(z_key)
+        z = self.get_array(z_key)
         std_dev = numpy.std(z, axis=1)
         min_index = numpy.argmin(std_dev)
         self.log(logging.DEBUG, 'Lowest std dev at measurement point {0}'.format(min_index))
-        x = self.get_sub_item_by_index(self._x_key, min_index)
-        y = self.get_sub_item_by_index(self._y_key, min_index)
+        x = self.get_sub_item_by_index(x_key, min_index)
+        y = self.get_sub_item_by_index(y_key, min_index)
+        self.log(logging.INFO, 'Center Position: X: {0}, Y: {1}'.format(x,y))
         return(x, y)
 
     def save_data(self, x_key, y_key, z_key=None, pre=None, norm_by_key=None):
@@ -497,6 +501,8 @@ if __name__ == '__main__':
     #scan_plotter.plot(x_key='xbpm_x_translation',
     #                  y_key='currents',
     #                  norm_by_key=None)
-    #print(scan_plotter.get_center_2d())
+    print(scan_plotter.get_center_2d(x_key='xbpm_x_translation',
+                                    y_key='xbpm_y_translation',
+                                    z_key='currents'))
     #print(scan_plotter.get_center([2,4]))
     

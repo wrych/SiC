@@ -13,86 +13,175 @@ import numpy
 import scans
 import scanner
 
+
 def get_serial():
-    return(input('Please enter device Serial:\n>'))
+    return (input('Please enter device Serial:\n>'))
+
 
 def get_time_diff(start_time, last_time=None):
     now_time = datetime.datetime.now()
+    print('####################################')
+    print('####################################')
     print('Time since start: {0}'.format(now_time - start_time))
     if (last_time is not None):
-        print ('Time sinc last Test {0}'.format(now_time - last_time))
-    return(now_time)
+        print('Time sinc last Test {0}'.format(now_time - last_time))
+    print('####################################')
+    print('####################################')
+    return (now_time)
+
 
 if __name__ == '__main__':
-    device = get_serial()
-    while(input('Is the device serial "{0}"?\nEnter "yes" to confirm.\n>'.format(device)) != 'yes'):
-        device = get_serial()
+    device = sys.argv[1]
+    data_path = '/sls/X05DA/data/e16578/Data1/sicrigi/20180212'
     date_str = datetime.datetime.strftime(datetime.datetime.now(), '%Y%m%d_%H%M%S')
-    max_bias = 20.0
+    center_v, center_h = [0.0, 0.0]
     start_time = datetime.datetime.now()
-    # Forward Bias Scan    
-    scans.ForwardBiasScan(device=device, path_identifier=date_str)
     last_time = get_time_diff(start_time, start_time)
-    # Reverse Bias Scan 
-    scans.ReverseBiasScan(device=device, path_identifier=date_str, current_range=2)
+
+    # --------
+    #max_bias = 2.0  # This for Diamond
+    #print('Warning, high bias, uA gain setting')
+    #input('press any key to continue')
+    max_bias = 2.0     #This for SiC
+    # -------
+    ## Forward Bias Scan
+    #scans.ForwardBiasScan(device=device, path_identifier=date_str)
+    #last_time = get_time_diff(start_time, last_time)
+
+    '''
+    ## Reverse Bias Scan
+    reverse_bias = scans.ReverseBiasScan(device=device,
+                                         data_path=data_path,
+                                         path_identifier=date_str,
+                                         current_range=2,
+                                         scan_kw_args={'vmax':2.0, 'vdelta': 0.5})
     last_time = get_time_diff(start_time, last_time)
-    # XY Coarse Scan for finding center
-    xy_scan_inst = scans.XYScan(device=device, bias=max_bias, path_identifier=date_str)
+
+    scan_bias = reverse_bias.get_result()    
+    if (scan_bias < max_bias):
+        max_bias = scan_bias
+
+    print('###############################')
+    print('Determined Bias Setting:{0} V'.format(max_bias))
+    print('###############################')
+    
+    ## Transparancy Scan
+    scans.TransparancyScan(device=device,
+                           data_path=data_path,
+                           beam_size=0,  # ignored
+                           bias=max_bias,
+                           scan_name='trans_scan',
+                           path_identifier=date_str,
+                           scan_kw_args={'out_of_beam_value': -60.0})
+    last_time = get_time_diff(start_time, last_time)
+    '''
+    ## Start OF CENTERING
+    xy_scan_inst = scans.XYScan(device=device,
+                                data_path=data_path,
+                                bias=max_bias,
+                                path_identifier=date_str,
+                                scan_name='xy_centering_1',
+                                scan_kw_args={'x_center': center_h,
+                                              'y_center': center_v,
+                                              ##'x_range': numpy.arange(-0.5, 0.51, 0.1),
+                                              ##'y_range': numpy.arange(0.5, -0.51, -0.1)})
+                                              'x_range': numpy.arange(-0.5, 0.51, 0.25),
+                                              'y_range': numpy.arange(0.5, -0.51, -0.25)})
+    last_time = get_time_diff(start_time, last_time)
     center_h, center_v = xy_scan_inst.get_result()
+
+    ## 
+    xy_scan_inst = scans.XYScan(device=device,
+                        data_path=data_path,
+                        bias=max_bias, 
+                        path_identifier=date_str,
+                        scan_name='xy_centering_2',
+                        scan_kw_args={'x_center': center_h, 
+                                      'y_center': center_v, 
+                                      ##'x_range': numpy.arange(0.125,-0.1251,-0.01),
+                                      ##'y_range': numpy.arange(0.125,-0.1251,-0.01)})
+                                        'x_range': numpy.arange(0.125, -0.1251, -0.1),
+                                        'y_range': numpy.arange(0.125, -0.1251, -0.1)})
     last_time = get_time_diff(start_time, last_time)
-    # CCE per pad
-    for pad_index in range(4):
-        x_offsets = [-0.5,0.5,-0.5,0.5]
-        y_offsets = [-0.5,-0.5,0.5,0.5]
+
+    #---If broken, do not center!
+    #center_h, center_v = xy_scan_inst.get_result()
+
+
+    ## END OF CENTERING, with 10um resolution!
+
+    '''
+    ## Linearity Scan
+    for xbpm_range in [2, 1]:
+        scans.LinearityScan(device=device,
+                            data_path=data_path,
+                            scan_name='linearity_xbpmrange_{0}'.format(xbpm_range),
+                            path_identifier=date_str,
+                            x_offset=center_h + .25,
+                            y_offset=center_v + .25)
+        last_time = get_time_diff(start_time, last_time)
+    '''
+
+    ## CCE per pad
+
+    for pad_index in range(1):
+        x_offsets = numpy.array([-0.5,0.5,-0.5,0.5])+center_h
+        y_offsets = numpy.array([-0.5,-0.5,0.5,0.5])+center_v
         scans.ReverseBiasScanBeam(device=device, 
                                      path_identifier=date_str,
                                      shutter_open=1,
                                      scan_name='cce_{0}'.format(pad_index+1),
                                      x_offset=x_offsets[pad_index],
                                      y_offset=y_offsets[pad_index])
+
     last_time = get_time_diff(start_time, last_time)
-    # High Resolution 1D Y Scan
-    scans.YScan(device=device, 
-                            x_offset=0.5, 
-                            scan_kw_args={'y_center':center_v}, 
-                            bias=max_bias, 
-                            path_identifier=date_str)
+    
+
+    ## High Resolution 1D Y Scan
+    scans.YScan(device=device,
+                x_offset=center_h + 0.25,
+                scan_name='Yscan_13',
+                scan_kw_args={'y_center': center_v},
+                bias=max_bias,
+                path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
-    # High Resolution 1D X Scan
-    scans.XScan(device=device, 
-                            y_offset=0.5, 
-                            scan_kw_args={'x_center':center_h}, 
-                            bias=max_bias, 
-                            path_identifier=date_str)
+
+    scans.YScan(device=device,
+                x_offset=center_h - 0.25,
+                scan_name='Yscan_42',
+                scan_kw_args={'y_center': center_v},
+                bias=max_bias,
+                path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
-    # XY Fine Scan
-    scans.XYScan(device=device, 
-                        bias=max_bias, 
-                        path_identifier=date_str,
-                        scan_name='xy_scan_fine',
-                        scan_kw_args={'x_center': center_v, 
-                                      'y_center': center_h, 
-                                      'x_range': numpy.arange(0.125,-0.1251,-0.01), 
-                                      'y_range': numpy.arange(0.125,-0.1251,-0.01)})
+
+    ## High Resolution 1D X Scan
+    scans.XScan(device=device,
+                y_offset=center_v + 0.25,
+                scan_name='Xscan_12',
+                scan_kw_args={'x_center': center_h},
+                bias=max_bias,
+                path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
-    # XY Very Coarse Scan
+
+    scans.XScan(device=device,
+                y_offset=center_v - 0.25,
+                scan_name='Xscan_43',
+                scan_kw_args={'x_center': center_h},
+                bias=max_bias,
+                path_identifier=date_str)
+    last_time = get_time_diff(start_time, last_time)
+
+    
+    ## XY Very Coarse Scan
     scans.XYScan(device=device,
-                        beam_size=0.2,
+                        beam_size=0,
                         bias=max_bias, 
                         path_identifier=date_str,
                         scan_name='xy_scan_very_coarse',
-                        scan_kw_args={'x_center': center_v, 
-                                      'y_center': center_h, 
-                                      'x_range': numpy.arange(2.5,-2.51,-0.20), 
-                                      'y_range': numpy.arange(1.5,-1.51,-0.20)})
+                        scan_kw_args={'x_center': center_h, 
+                                      'y_center': center_v, 
+                                      'x_range': numpy.arange(3.5,-3.51,-0.30), 
+                                      'y_range': numpy.arange(2.5,-2.51,-0.30)})
     last_time = get_time_diff(start_time, last_time)
-    # Transparancy Scan
-    for photon_energy in [5600.0, 8000.0, 12400.0, 17500.0]:
-        scans.TransparancyScan(device=device, 
-                           beam_size=0.2,
-                           photon_energy=photon_energy, 
-                           bias=max_bias, 
-                           path_identifier=date_str)
-    last_time = get_time_diff(start_time, last_time)
-    
+
 

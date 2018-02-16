@@ -14,9 +14,10 @@ import sys
 import os
 
 class UserScan(collectorobject.CollectorObject):
-    def __init__(self, device, name, path_identifier, scan_name=None, scan_kw_args={}, logger=sys.stdout):
+    def __init__(self, device, data_path, name, path_identifier, scan_name=None, scan_kw_args={}, logger=sys.stdout):
         super(UserScan, self).__init__(logger)
         self._device = device
+        self._data_path = data_path
         self._name = name
         if (scan_name is not None):
             self._scan_name = scan_name
@@ -70,7 +71,7 @@ class UserScan(collectorobject.CollectorObject):
         self._scan = collectorobject.Scan(self._obj, self._scan_config, self._scan_root_path)
 
     def setup_folders(self):
-        self._scan_root_path = os.path.join('/sls/X05DA/data/e16578/sicrigi/data', self._device, self._path_identifier, self._scan_name)
+        self._scan_root_path = os.path.join(self._data_path, self._device, self._path_identifier, self._scan_name)
         os.makedirs(self._scan_root_path)
         return(self._scan_root_path)
 
@@ -84,7 +85,7 @@ class UserScan(collectorobject.CollectorObject):
 
     def _post_scan(self):
         self.log(logging.INFO, 'Executing Post Scan Operations...')
-        self. _analysis = scananalyser.ScanAnalyser(self._scan_config, self._scan.get_scan_path(), scan_data=self._scan.get_data_points())
+        self. _analysis = scananalyser.ScanAnalyser(self._scan.get_scan_path(), scan_data=self._scan.get_data_points())
         self.post_scan()
 
     def post_scan(self):

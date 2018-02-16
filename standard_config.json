@@ -5,7 +5,7 @@
         "config": {
             "current_range":{
                 "type": "value",
-                "value": 2,
+                "value": 1,
                 "dtype": "int"
             },
             "xbpm_bias_state":{
@@ -39,11 +39,6 @@
             "diode_range": {
                 "type": "value",
                 "value": 4,
-                "dtype": "int"
-            },
-            "diode_pool": {
-                "type": "value",
-                "value": 7,
                 "dtype": "int"
             },
             "num_channels":{
@@ -84,7 +79,7 @@
             },
             "averaging_time":{
                 "type": "value",
-                "value": 1,
+                "value": 0.5,
                 "dtype": "float",
                 "unit": "s"
             },
@@ -101,7 +96,7 @@
                 "type": "value",
                 "value": 8000,
                 "dtype": "float",
-                "synced": 50.0,
+                "synced": 100.0,
                 "unit": "eV"
             },
         	"photon_energy_rbv":{
@@ -113,21 +108,24 @@
                 "type": "value",
                 "value": 3.0,
                 "dtype": "float",
-                "unit": "mm"
+                "unit": "mm",
+                "access_mode": "r"
             },
             "jj_slits_v_size":{
                 "type": "value",
                 "value": 0.01,
                 "dtype": "float",
                 "synced": 0.0001,
-                "unit": "mm"
+                "unit": "mm",
+                "access_mode": "r"
             },
             "jj_slits_h_size":{
                 "type": "value",
                 "value": 0.01,
                 "dtype": "float",
                 "synced": 0.0001,
-                "unit": "mm"
+                "unit": "mm",
+                "access_mode": "r"
             },
             "xbpm_z_translation":{
                 "type": "value",

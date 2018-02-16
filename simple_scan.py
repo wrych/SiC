@@ -18,5 +18,6 @@ if __name__ == '__main__':
         safe_cfg = json.load(f)
     obj = collectorobject.Resource()
     obj.initialize(cfg)
- 
+
+    epics = obj.get_child('Epics')
     
