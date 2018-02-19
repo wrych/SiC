@@ -275,10 +275,11 @@ class ScanAnalyser():
         self.log(logging.INFO, 'Center Position: X: {0}, Y: {1}'.format(x,y))
         return(x, y)
 
-    def save_data(self, x_key, y_key, z_key=None, pre=None, norm_by_key=None):
-        active_keys = [key for key in [x_key, y_key, z_key] if (key is not None)]
-        for key in active_keys:
-            data = self.get_array_and_norm(key, norm_by_key=norm_by_key if key == active_keys[-1] else None)
+    def save_data(self, keys=None, pre=None):
+        if keys is None:
+            keys = self._param_paths + self._value_paths
+        for key in keys:
+            data = self.get_array_and_norm(key, norm_by_key=None)
             unit = self.get_unit_by_key(key)
             file_path = os.path.join(self._scan_path,self.get_file_name(key, pre=pre, format='txt'))
             self.log(logging.INFO, 'Saving {0} data to: {1}'.format(key, file_path))
@@ -479,11 +480,9 @@ class ScanAnalyser():
         try:
             if (len(self._param_paths) == 1):
                 self.plot_2d(x_key, y_key, display_plot)
-                self.save_data(x_key, y_key, norm_by_key=norm_by_key)
             else:
                 z_key = self.get_paths_by_key(z_key)
                 self.plot_3d(x_key, y_key, z_key, display_plot, norm_by_key=norm_by_key)
-                self.save_data(x_key, y_key, z_key, norm_by_key=norm_by_key)
         except Exception as e:
             self.log(logging.WARN, 'Could not plot data.')
             self.log(logging.INFO, e)
@@ -494,15 +493,12 @@ class ScanAnalyser():
 if __name__ == '__main__':
     folder = sys.argv[1]
     scan_plotter = ScanAnalyser(folder)
-    scan_plotter.plot(x_key='xbpm_x_translation',
-                      y_key='xbpm_y_translation',
-                      z_key='currents',
-                      norm_by_key=None)
+    #scan_plotter.plot(x_key='xbpm_x_translation',
+    #                  y_key='xbpm_y_translation',
+    #                  z_key='currents',
+    #                  norm_by_key=None)
     #scan_plotter.plot(x_key='xbpm_x_translation',
     #                  y_key='currents',
     #                  norm_by_key=None)
-    print(scan_plotter.get_center_2d(x_key='xbpm_x_translation',
-                                    y_key='xbpm_y_translation',
-                                    z_key='currents'))
-    #print(scan_plotter.get_center([2,4]))
+    scan_plotter.save_data()
     

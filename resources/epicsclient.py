@@ -78,9 +78,10 @@ class Epics(collectorobject.Resource):
     def compute_offset(self):
         self.log(logging.INFO, 'Compute Offsets')
         self.acquire()
+        time.sleep(1)
+        self.acquire()
         for i in range(4):
             getattr(self, 'set_compute_current_offset_{0}'.format(i))
-#plot(x,y)
 
     def build_getter_setter(self, beam_line, device, config, rbv):
         for key, value in config.items():

@@ -62,9 +62,9 @@ class Resource(CollectorObject):
     def update_value_child(self, key, params):
         try:
             value = params['value']
-            if ('w' in self._children[key].get_access_mode()):
+            if ('w' in self._children[key].get_access_mode() and value is not None):
                 self._children[key].set_value(value)
-        except:
+        except Exception as e:
             pass
 
     def initialize_value_child(self, key, params):
@@ -157,6 +157,7 @@ class Scan(CollectorObject):
         self._data_points = []
         self._name_pattern = name_pattern
         self._root_path = path
+        self.execute_pre_scan_actions()
 
     def get_scan_path(self):
         return(self._scan_path)
@@ -170,6 +171,10 @@ class Scan(CollectorObject):
         self._resource.scan(self, self._config['scan'])
         self.log(logging.INFO, 'Scan Finished')
         return(self.get_data_points())
+
+    def execute_pre_scan_actions(self):
+        self.log(logging.INFO, 'Executing pre scan operations.')
+        self._resource.update_config(self._config['prescan'])
 
     def get_data_points(self):
         return(self._data_points)
@@ -263,6 +268,7 @@ class Value(CollectorObject):
                  setter=None,
                  getter=None,
                  synced=None,
+                 wait_time=None,
                  logger=sys.stdout):
         super(self.__class__, self).__init__(logger)
         self.set_dtype(dtype)
@@ -273,12 +279,19 @@ class Value(CollectorObject):
         self.set_setter(setter)
         self.set_getter(getter)
         self.set_synced(synced)
+        self.set_wait_time(wait_time)
 
     def set_synced(self, value):
         self._synced = value
 
     def get_synced(self):
         return(self._synced)
+
+    def set_wait_time(self, value):
+        self._wait_time = value
+
+    def get_wait_time(self):
+        return(self._wait_time)
 
     def set_dtype(self, dtype):
         if (dtype not in self._KNOWN_DTYPES and dtype is not None):
@@ -376,6 +389,8 @@ class Value(CollectorObject):
         self._set_point = value
         setter = self.get_setter()
         if (setter is not None):
+            if(self._wait_time is not None):
+                time.sleep(self._wait_time)
             if(self._synced is not None):
                 self.sync(setter, self.get_getter(), value, self._synced)
             else:
