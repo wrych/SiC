@@ -29,44 +29,30 @@ def get_time_diff(start_time, last_time=None):
 
 if __name__ == '__main__':
     device = sys.argv[1]#get_serial()
-    #while(input('Is the device serial "{0}"?\nEnter "yes" to confirm.\n>'.format(device)) != 'yes'):
-    #    device = get_serial()
+
     date_str = datetime.datetime.strftime(datetime.datetime.now(), '%Y%m%d_%H%M%S')
     center_v, center_h = [0.0, 0.0]
     start_time = datetime.datetime.now()
     last_time = get_time_diff(start_time, start_time)
 
 #--------
-    #max_bias = 30.0     #This for Diamond
-    max_bias = 10.0     #This for SiC
+    max_bias = 30.0     #This for Diamond
+    #max_bias = 10.0     #This for SiC
 #-------    
 
     ## Forward Bias Scan    
     #scans.ForwardBiasScan(device=device, path_identifier=date_str)
-    last_time = get_time_diff(start_time, last_time)
-    ## Reverse Bias Scan 
-    #reverse_bias = scans.ReverseBiasScan(device=device, path_identifier=date_str, current_range=2)
     #last_time = get_time_diff(start_time, last_time)
-    #scan_bias = reverse_bias.get_result()    
-    #if (scan_bias < max_bias):
-    #    max_bias = scan_bias
+    ## Reverse Bias Scan 
+    reverse_bias = scans.ReverseBiasScan(device=device, path_identifier=date_str, current_range=2)
+    last_time = get_time_diff(start_time, last_time)
+
     print('###############################')
     print('Determined Bias Setting:{0} V'.format(max_bias))
     print('###############################')
-    
 
-    ## Transparancy Scan
-    '''
-    for index, beam_size in enumerate([3, 0, 2]):
-        scans.TransparancyScan(device=device,
-                           beam_size=beam_size,
-                           bias=max_bias, 
-                           scan_name='trans_scan_{0}apt'.format(beam_size),
-                           path_identifier=date_str)
-    last_time = get_time_diff(start_time, last_time)
-   '''
 #---
-    '''
+
     ## Start OF CENTERING
     xy_scan_inst = scans.XYScan(device=device, 
                         bias=max_bias, 
@@ -96,22 +82,7 @@ if __name__ == '__main__':
     center_h, center_v = xy_scan_inst.get_result()
 
     ## END OF CENTERING, with 10um resolution!
-    
-    ## CCE per pad
-    
-    for pad_index in range(1):
-        x_offsets = numpy.array([-0.5,0.5,-0.5,0.5])+center_h
-        y_offsets = numpy.array([-0.5,-0.5,0.5,0.5])+center_v
-        scans.ReverseBiasScanBeam(device=device, 
-                                     path_identifier=date_str,
-                                     shutter_open=1,
-                                     scan_name='cce_{0}'.format(pad_index+1),
-                                     x_offset=x_offsets[pad_index],
-                                     y_offset=y_offsets[pad_index])
-    
-    last_time = get_time_diff(start_time, last_time)
-        
-    '''
+
     ## High Resolution 1D Y Scan
     scans.YScan(device=device, 
                             x_offset=center_h+0.25,
@@ -128,6 +99,17 @@ if __name__ == '__main__':
                             path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
 
+    '''
+    ## Transparancy Scan
+    for index, beam_size in enumerate([3, 0, 2]):
+        scans.TransparancyScan(device=device,
+                           beam_size=beam_size,
+                           bias=max_bias, 
+                           scan_name='trans_scan_{0}apt'.format(beam_size),
+                           path_identifier=date_str)
+    last_time = get_time_diff(start_time, last_time)
+    '''
+    '''
     ## High Resolution 1D X Scan
     scans.XScan(device=device, 
                             y_offset=center_v+0.25, 
@@ -146,7 +128,24 @@ if __name__ == '__main__':
                             path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
     ## XY Fine Scan
-    
+    '''
+    '''
+    ## CCE per pad
+
+    for pad_index in range(1):
+        x_offsets = numpy.array([-0.5,0.5,-0.5,0.5])+center_h
+        y_offsets = numpy.array([-0.5,-0.5,0.5,0.5])+center_v
+        scans.ReverseBiasScanBeam(device=device, 
+                                     path_identifier=date_str,
+                                     shutter_open=1,
+                                     scan_name='cce_{0}'.format(pad_index+1),
+                                     x_offset=x_offsets[pad_index],
+                                     y_offset=y_offsets[pad_index])
+
+    last_time = get_time_diff(start_time, last_time)
+    '''
+
+    '''
     ## XY Very Coarse Scan
     scans.XYScan(device=device,
                         beam_size=0,
@@ -158,7 +157,7 @@ if __name__ == '__main__':
                                       'x_range': numpy.arange(3.5,-3.51,-0.30), 
                                       'y_range': numpy.arange(2.5,-2.51,-0.30)})
     last_time = get_time_diff(start_time, last_time)
-
+    '''
     '''
 #---------------OVERNIGHT!!
     xy_scan_inst = scans.XYScan(device=device, 

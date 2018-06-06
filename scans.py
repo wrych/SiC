@@ -7,8 +7,8 @@ import numpy
 
 import scanner
 
-#def reverse_bias(vmax=60.0, vdelta=0.5):  #for Diamond and 10um SiC
-def reverse_bias(vmax=10.0, vdelta=0.25):  #for <2um SiC
+def reverse_bias(vmax=30.0, vdelta=0.5):  #for Diamond and 10um SiC
+#def reverse_bias(vmax=10.0, vdelta=0.25):  #for <2um SiC
     return({
 	    'scan': {
 		    'Epics': {
