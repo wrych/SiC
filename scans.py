@@ -7,7 +7,7 @@ import numpy
 
 import scanner
 
-def reverse_bias(vmax=30.0, vdelta=0.5):  #for Diamond and 10um SiC
+def reverse_bias(vmax=30.0, vdelta=1.5):  #for Diamond and 10um SiC
 #def reverse_bias(vmax=10.0, vdelta=0.25):  #for <2um SiC
     return({
 	    'scan': {
@@ -92,7 +92,7 @@ def forward_bias():
 	    }
     })
 
-def y_scan(y_center=0.0, y_range=numpy.arange(0.6, -0.601, -0.005)):
+def y_scan(y_center=0.0, y_range=numpy.arange(0.6, -0.601, -0.05)):
     return({
 	    'scan': {
 		    'Epics': {
@@ -210,6 +210,69 @@ def transparancy_scan():
 		    }
 	    }
     })
+
+def linearity_scan(transmission_range):
+    return({
+	    'scan': {
+		    'Epics': {
+			    'type': 'resource',
+			    'config': {
+				    'transmission': {
+					    'type': 'value',
+					    'values': transmission_range,
+				    }
+			    }
+		    }
+	    },
+	    'meas':{
+		    'Epics': {
+			    'type': 'resource',
+			    'config': {
+				    'currents':{
+					    'type': 'value'
+				    },
+				'diode_current':{
+					    'type': 'value'
+				    },
+				'storage_ring_current':{
+					    'type': 'value'
+				    }
+			    }
+		    }
+	    }
+    })
+
+class LinearityScan(scanner.UserScan):
+    def __init__(self, *args, **kw_args):
+        kw_args.update({'name': 'linearity_scan'})
+        kw_args = self.set_kw_args(kw_args, 'current_range')
+        kw_args = self.set_kw_args(kw_args, 'beam_size')
+        kw_args = self.set_kw_args(kw_args, 'x_offset')
+        kw_args = self.set_kw_args(kw_args, 'y_offset')
+        kw_args = self.set_kw_args(kw_args, 'bias')
+        super(LinearityScan, self).__init__(*args, **kw_args)
+
+    def pre_scan(self):
+        self._obj.get_child('Epics').get_child('xbpm_bias_voltage').set_value(self._kw_bias)
+        if (self._kw_current_range is not None):
+            self._obj.get_child('Epics').get_child('current_range').set_value(self._kw_current_range)
+            self._obj.get_child('Epics').compute_offset()
+            time.sleep(5)
+        if (self._kw_x_offset is not None):
+            self._obj.get_child('Epics').get_child('xbpm_x_translation').set_value(self._kw_x_offset)
+        if (self._kw_y_offset is not None):
+            self._obj.get_child('Epics').get_child('xbpm_y_translation').set_value(self._kw_y_offset)
+        self._obj.get_child('Epics').get_child('shutter_open').set_value(1)
+        time.sleep(5)
+
+    def post_scan(self):
+        self._obj.get_child('Epics').get_child('shutter_open').set_value(0)
+        if (self._kw_current_range is not None):
+            self._obj.get_child('Epics').compute_offset()
+            time.sleep(5)
+
+    def tear_down(self):
+        pass
 
 class TransparancyScan(scanner.UserScan):
     def __init__(self, *args, **kw_args):

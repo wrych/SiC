@@ -13,12 +13,14 @@ class Epics(collectorobject.Resource):
         'storage_ring_current': 'ARIDI-PCT:CURRENT',
 
         'aperature': 'X10SA-ES-APT:SET',
-        'xbpm_y_translation_d': 'X10SA-ES-OMS4:MOTY.VAL',
-        'xbpm_x_translation_d': 'X10SA-ES-OMS4:MOTX.VAL',
-        'xbpm_y_translation_rbv': 'X10SA-ES-OMS4:MOTY.RBV',
-        'xbpm_x_translation_rbv': 'X10SA-ES-OMS4:MOTX.RBV',
+        'xbpm_x_translation_d': 'X10SA-ES-XY:TRX1.VAL',
+        'xbpm_y_translation_d': 'X10SA-ES-XY:TRY1.VAL',
+        'xbpm_x_translation_rbv': 'X10SA-ES-XY:TRX1.RBV',
+        'xbpm_y_translation_rbv': 'X10SA-ES-XY:TRY1.RBV',
         'diode_current': 'X10SA-ES-XEYE_K:READOUT',
         'diode_range': 'X10SA-ES-XEYE_K:RANGE',
+        'transmission_d': 'X10SA-ES-FI:TRANSM-SET',
+        'transmission_rbv': 'X10SA-ES-FI:TRANSM-GET',
     }
 
     AH501D_KEYS = {
@@ -63,7 +65,13 @@ class Epics(collectorobject.Resource):
         #self.get_filter_wheel = self.get_filter_wheel_d
         #self.get_photon_energy = self.get_photon_energy_rbv
         #self.set_photon_energy = self.set_photon_energy_d
+        self.get_transmission = self.get_transmission_rbv
         super(Epics, self).initialize(config)
+
+    def set_transmission(self,value):
+        ret_val = self.set_transmission_d(value)
+        time.sleep(5)
+        return ret_val
 
     def set_filter_wheel(self, value):
         self.set_filter_wheel_d(value)
