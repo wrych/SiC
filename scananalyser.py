@@ -220,7 +220,7 @@ class ScanAnalyser():
         return(numpy.array(self.get_sub_item(key, self._scan_parameter['scan'])))
 
     def get_reshape_order(self, x, y, z):
-        return('f')
+        return('c')
 
     def matshow_axis(self, ax, x, y, z,
                      label=None,
