@@ -220,7 +220,7 @@ class ScanAnalyser():
         return(numpy.array(self.get_sub_item(key, self._scan_parameter['scan'])))
 
     def get_reshape_order(self, x, y, z):
-        return('f')
+        return('c')
 
     def matshow_axis(self, ax, x, y, z,
                      label=None,
@@ -276,7 +276,8 @@ class ScanAnalyser():
             kw_args = self.get_labels(x_key, y_key)
             kw_args.update({
                 'ylim': ylims,
-                'title': 'Pad {0}'.format(i)
+                'title': 'Pad {0}'.format(i),
+                'scale': 'linear'
                 })
             self.plot_axis(ax, x, y[:, i], **kw_args)
         self.publish_plot(fig, display_plot, x_key, y_key, name='4pad')
@@ -290,24 +291,25 @@ class ScanAnalyser():
             kw_args.update({
                 'label': 'Pad {0}'.format(i),
                 'legend': True,
-                'title': 'Pad Overlayed'
+                'title': 'Pad Overlayed',
+                'scale': 'linear'
                 })
             self.plot_axis(ax, x, y[:, i], **kw_args)
         ax = fig.add_subplot(2, 1, 2)
         y = numpy.sum(y, axis=1)
-        median = numpy.median(y)
-        y /= median
+        #median = numpy.median(y)
+        #y /= median
         kw_args.update({
                 'label': None,
                 'legend': False,
                 'title': 'Pad Sum',
-                'ylim': [0.9, 1.1/1.5],
                 'scale': 'linear'
                 })
         self.plot_axis(ax, x, y, **kw_args)
         self.publish_plot(fig, display_plot, x_key, y_key, name='overall')
 
     def plot_2d(self, x_key, y_key, display_plot):
+        fig = self.get_fig()
         x = self.get_array(x_key)
         y = self.get_array(y_key)
         self.log(logging.INFO, 'Plotting')
@@ -316,7 +318,7 @@ class ScanAnalyser():
             self.plot_2d_overall(x, y, x_key, y_key, display_plot)
         else:
             ax = fig.add_subplot(1, 1, 1)
-            self.plot_axis(ax, x, y, **self.get_labels())
+            self.plot_axis(ax, x, y, **self.get_labels(x_key, y_key))
 
     def get_fig(self):
         return(matplotlib.pyplot.figure(figsize=(12, 9)))
@@ -448,11 +450,11 @@ class ScanAnalyser():
 if __name__ == '__main__':
     folder = sys.argv[1]
     scan_plotter = ScanAnalyser(folder)
-    scan_plotter.plot(x_key='xbpm_x_translation',
-                      y_key='xbpm_y_translation',
-                      z_key='diode_current')    
     #scan_plotter.plot(x_key='xbpm_x_translation',
-    #                  y_key='currents')
+    #                  y_key='xbpm_y_translation',
+    #                  z_key='currents')
+    scan_plotter.plot(x_key='transmission',
+                      y_key='diode_current')
     #print(scan_plotter.get_center_2d(x_key='xbpm_x_translation',
     #                                 y_key='xbpm_y_translation',
     #                                 z_key='currents'))
