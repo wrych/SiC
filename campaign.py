@@ -39,7 +39,7 @@ if __name__ == '__main__':
     max_bias = 30.0     #This for Diamond
     #max_bias = 10.0     #This for SiC
 #-------    
-
+    
     ## Forward Bias Scan    
     #scans.ForwardBiasScan(device=device, path_identifier=date_str)
     #last_time = get_time_diff(start_time, last_time)
@@ -48,41 +48,69 @@ if __name__ == '__main__':
     last_time = get_time_diff(start_time, last_time)
 
     print('###############################')
-    print('Determined Bias Setting:{0} V'.format(max_bias))
+    print('Please adjust BIAS')
     print('###############################')
 
-#---
+    for max_bias in [10.0,20.0,30.0]:
 
-    ## Start OF CENTERING
-    xy_scan_inst = scans.XYScan(device=device, 
-                        bias=max_bias, 
-                        path_identifier=date_str,
-                        scan_name='xy_centering_1',
-                        scan_kw_args={'x_center': center_h, 
-                                      'y_center': center_v, 
-                                      'x_range': numpy.arange(0.4,-0.41,-0.04), 
-                                      'y_range': numpy.arange(0.4,-0.41,-0.04)})   
-    last_time = get_time_diff(start_time, last_time)
+        print('###############################')
+        print('Determined Bias Setting:{0} V'.format(max_bias))
+        print('###############################')
 
-#---If broken, do not center!
-    center_h, center_v = xy_scan_inst.get_result()
+    #---
+        
+        ## Start OF CENTERING
+        xy_scan_inst = scans.XYScan(device=device, 
+                            bias=max_bias, 
+                            path_identifier=date_str,
+                            scan_name='xy_centering_bias_{0}'.format(max_bias),
+                            scan_kw_args={'x_center': center_h, 
+                                          'y_center': center_v, 
+                                          'x_range': numpy.arange(1.5,-1.51,-0.20), 
+                                          'y_range': numpy.arange(0.8,-0.81,-0.10)})   
+        last_time = get_time_diff(start_time, last_time)
+        
+    #---If broken, do not center!
+        center_h, center_v = xy_scan_inst.get_result()
+        '''
+        ## 
+        xy_scan_inst = scans.XYScan(device=device, 
+                            bias=max_bias, 
+                            path_identifier=date_str,
+                            scan_name='xy_centering_2',
+                            scan_kw_args={'x_center': center_h, 
+                                          'y_center': center_v, 
+                                          'x_range': numpy.arange(0.125,-0.1251,-0.01), 
+                                          'y_range': numpy.arange(0.125,-0.1251,-0.01)}) 
+        last_time = get_time_diff(start_time, last_time)
+        
+    #---If broken, do not center!
+        center_h, center_v = xy_scan_inst.get_result()
+        '''
+        scans.LinearityScan(device=device,
+                           beam_size=0,
+                           bias=max_bias,
+                           current_range=1,
+                           x_offset=center_h+0.25,
+                           y_offset=center_v+0.25, 
+                           scan_name='linearity_cr_1_bias_{0}'.format(max_bias),
+                           path_identifier=date_str,
+                           scan_kw_args={'transmission_range': [1.0,0.101]})
+        last_time = get_time_diff(start_time, last_time)
 
-    ## 
-    xy_scan_inst = scans.XYScan(device=device, 
-                        bias=max_bias, 
-                        path_identifier=date_str,
-                        scan_name='xy_centering_2',
-                        scan_kw_args={'x_center': center_h, 
-                                      'y_center': center_v, 
-                                      'x_range': numpy.arange(0.125,-0.1251,-0.01), 
-                                      'y_range': numpy.arange(0.125,-0.1251,-0.01)}) 
-    last_time = get_time_diff(start_time, last_time)
-
-#---If broken, do not center!
-    center_h, center_v = xy_scan_inst.get_result()
+        scans.LinearityScan(device=device,
+                           beam_size=0,
+                           bias=max_bias,
+                           current_range=2,
+                           x_offset=center_h+0.25,
+                           y_offset=center_v+0.25, 
+                           scan_name='linearity_cr_2_bias_{0}'.format(max_bias),
+                           path_identifier=date_str,
+                           scan_kw_args={'transmission_range': [0.0099,0.0001]})
+        last_time = get_time_diff(start_time, last_time)
 
     ## END OF CENTERING, with 10um resolution!
-
+    '''
     ## High Resolution 1D Y Scan
     scans.YScan(device=device, 
                             x_offset=center_h+0.25,
@@ -98,7 +126,7 @@ if __name__ == '__main__':
                             bias=max_bias, 
                             path_identifier=date_str)
     last_time = get_time_diff(start_time, last_time)
-
+    '''
     '''
     ## Transparancy Scan
     for index, beam_size in enumerate([3, 0, 2]):
@@ -179,7 +207,7 @@ if __name__ == '__main__':
                 2:'Al_5e2_um',
                 3:'Al_1e3_um',
                 4:'Al_2e3_um',
-                5:'Al_5e3_um',
+                5:'Al_5e3_um',0.010
                 6:'Fe_25_um',
                 7:'Cu_25_um',
                 8:'Zn__um',

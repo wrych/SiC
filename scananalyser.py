@@ -220,7 +220,7 @@ class ScanAnalyser():
         return(numpy.array(self.get_sub_item(key, self._scan_parameter['scan'])))
 
     def get_reshape_order(self, x, y, z):
-        return('c')
+        return('f')
 
     def matshow_axis(self, ax, x, y, z,
                      label=None,
@@ -235,13 +235,14 @@ class ScanAnalyser():
         ax.set_ylabel(ylabel)
         if (z.shape[0] != x.shape[0]*y.shape[0]):
             numpy.pad(z, (x.shape[0]*y.shape[0]-z.shape[0]), 'constant', constant_values=0)
-        z = z.reshape(x.shape[0], y.shape[0], order=self.get_reshape_order(x,y,z))
+        z = z.reshape(y.shape[0], x.shape[0], order=self.get_reshape_order(x,y,z))
         cax = ax.imshow(z,
                         aspect='equal',
-                        extent=(numpy.min(x), numpy.max(x), numpy.min(y), numpy.max(y)),
+                        extent=(numpy.max(x), numpy.min(x), numpy.max(y), numpy.min(y)),
                         norm=norm,
                         cmap=cmap,
-                        origin='upper')
+                        origin='lower',
+                        interpolation='none')
         return(cax)
 
     def get_center_2d(self, x_key, y_key, z_key):
@@ -297,8 +298,8 @@ class ScanAnalyser():
             self.plot_axis(ax, x, y[:, i], **kw_args)
         ax = fig.add_subplot(2, 1, 2)
         y = numpy.sum(y, axis=1)
-        #median = numpy.median(y)
-        #y /= median
+        median = numpy.median(y)
+        y /= median
         kw_args.update({
                 'label': None,
                 'legend': False,
@@ -450,11 +451,11 @@ class ScanAnalyser():
 if __name__ == '__main__':
     folder = sys.argv[1]
     scan_plotter = ScanAnalyser(folder)
+    scan_plotter.plot(x_key='xbpm_x_translation',
+                      y_key='xbpm_y_translation',
+                      z_key='diode_current')    
     #scan_plotter.plot(x_key='xbpm_x_translation',
-    #                  y_key='xbpm_y_translation',
-    #                  z_key='currents')
-    scan_plotter.plot(x_key='transmission',
-                      y_key='diode_current')
+    #                  y_key='currents')
     #print(scan_plotter.get_center_2d(x_key='xbpm_x_translation',
     #                                 y_key='xbpm_y_translation',
     #                                 z_key='currents'))

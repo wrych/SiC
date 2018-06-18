@@ -73,7 +73,7 @@ class UserScan(collectorobject.CollectorObject):
         self._scan = collectorobject.Scan(self._obj, self._scan_config, self._scan_root_path)
 
     def setup_folders(self):
-        self._scan_root_path = os.path.join('/sls/X10SA/data/x10saop/Data10/20171212_DECTRIS', self._device, self._path_identifier, self._scan_name)
+        self._scan_root_path = os.path.join('/sls/X10SA/data/x10saop/Data10/20180606_DECTRIS_SiC', self._device, self._path_identifier, self._scan_name)
         os.makedirs(self._scan_root_path)
         return(self._scan_root_path)
 

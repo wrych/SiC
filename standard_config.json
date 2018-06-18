@@ -5,7 +5,7 @@
         "config": {
             "current_range":{
 			        "type": "value",
-			        "value": 0,
+			        "value": 1,
                     "dtype": "int"
         	    },
         	"xbpm_bias_state":{
@@ -27,7 +27,7 @@
 	        	},
             "diode_range": {
                     "type": "value",
-                    "value": 3,
+                    "value": 0,
                     "dtype": "int"
                 },
             "num_channels":{
@@ -83,7 +83,7 @@
              	},
         	"aperature":{
                     "type": "value",
-                    "value": 2,
+                    "value": 1,
                     "dtype": "int"
              	},
         	"xbpm_y_translation":{
@@ -99,6 +99,12 @@
                     "dtype": "float",
                     "synced": 0.0001,
                     "unit": "mm"
+             	},
+        	"transmission":{
+                    "type": "value",
+                    "value": 1.0,
+                    "dtype": "float",
+                    "synced": 0.001
              	}
       	}
 }
